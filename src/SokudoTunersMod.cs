@@ -20,7 +20,7 @@ namespace SokudoTuners
 
         public override void OnUpdate()
         {
-            NitroHud.Update();
+            VehicleHud.Update();
         }
     }
 }
