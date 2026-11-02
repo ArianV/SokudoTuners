@@ -60,14 +60,15 @@ namespace SokudoTuners
             if (speedText == null)
                 return false;
 
-            // Bar sits centred just under the speed number.
+            // The speed text box is pinned to the bottom-right corner and its text is left-aligned, so I line
+            // the bar up with the box's left edge. Centring it pushed it off the edge of the screen.
             _root = new GameObject("SokudoNitroBar", typeof(RectTransform));
             RectTransform rootRect = (RectTransform)_root.transform;
             rootRect.SetParent(speedText.transform, false);
-            rootRect.anchorMin = rootRect.anchorMax = new Vector2(0.5f, 0f);
-            rootRect.pivot = new Vector2(0.5f, 1f);
-            rootRect.anchoredPosition = new Vector2(0f, -6f);
-            rootRect.sizeDelta = new Vector2(220f, 16f);
+            rootRect.anchorMin = rootRect.anchorMax = new Vector2(0f, 0f);
+            rootRect.pivot = new Vector2(0f, 1f);
+            rootRect.anchoredPosition = new Vector2(0f, -4f);
+            rootRect.sizeDelta = new Vector2(170f, 14f);
             AddImage(_root, BackgroundColor);
 
             // The fill stretches from the left edge to Fuel along the width. Changing anchorMax.x is all
