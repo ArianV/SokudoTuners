@@ -20,6 +20,7 @@ namespace SokudoTuners
 
         private static float _accelStart = -1f;
         private static float _brakeStart = -1f;
+        private static bool _brakeArmed;
         private static Vector3 _brakeStartPosition;
 
         // Called every frame from the mod.
@@ -30,6 +31,7 @@ namespace SokudoTuners
             {
                 _accelStart = -1f;
                 _brakeStart = -1f;
+                _brakeArmed = false;
                 return;
             }
 
@@ -90,16 +92,22 @@ namespace SokudoTuners
             }
         }
 
-        // Starts when I hit the brakes (S while rolling forward) at or above the target speed, and stops when the
-        // car does. Letting go of the brake cancels it. The distance is real distance travelled in the world.
+        // Starts the moment the speed falls through the target while braking (S while rolling forward), and stops
+        // when the car does. Starting the clock as soon as I hit the brakes made runs from 110 and from 65 look
+        // like the same test. Letting go of the brake cancels it. The distance is real distance in the world.
         private static void UpdateBrakingTimer(LandVehicle vehicle, float speed)
         {
             bool braking = vehicle.currentThrottle < 0f && vehicle.Speed_Kmh > 0f;
 
             if (_brakeStart < 0f)
             {
-                if (braking && speed >= TimerTarget)
+                if (!braking)
+                    _brakeArmed = false;
+                else if (speed > TimerTarget)
+                    _brakeArmed = true;
+                else if (_brakeArmed)
                 {
+                    _brakeArmed = false;
                     _brakeStart = Time.time;
                     _brakeStartPosition = vehicle.transform.position;
                 }
