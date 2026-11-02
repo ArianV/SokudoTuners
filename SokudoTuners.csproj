@@ -27,12 +27,15 @@
     <Reference Include="MelonLoader" HintPath="$(MelonPath)\MelonLoader.dll" Private="false" />
     <Reference Include="0Harmony" HintPath="$(MelonPath)\0Harmony.dll" Private="false" />
     <Reference Include="Assembly-CSharp" HintPath="$(ManagedPath)\Assembly-CSharp.dll" Private="false" />
+    <!-- A few game types live in a second DLL, like the audio type enum. -->
+    <Reference Include="ScheduleOne.Core" HintPath="$(ManagedPath)\ScheduleOne.Core.dll" Private="false" />
     <!-- LandVehicle inherits from FishNet's NetworkBehaviour, so the compiler needs to see FishNet too. -->
     <Reference Include="FishNet.Runtime" HintPath="$(ManagedPath)\FishNet.Runtime.dll" Private="false" />
     <Reference Include="UnityEngine.CoreModule" HintPath="$(ManagedPath)\UnityEngine.CoreModule.dll" Private="false" />
     <Reference Include="UnityEngine.PhysicsModule" HintPath="$(ManagedPath)\UnityEngine.PhysicsModule.dll" Private="false" />
     <!-- WheelCollider lives in its own module. -->
     <Reference Include="UnityEngine.VehiclesModule" HintPath="$(ManagedPath)\UnityEngine.VehiclesModule.dll" Private="false" />
+    <Reference Include="UnityEngine.AudioModule" HintPath="$(ManagedPath)\UnityEngine.AudioModule.dll" Private="false" />
     <Reference Include="UnityEngine.ParticleSystemModule" HintPath="$(ManagedPath)\UnityEngine.ParticleSystemModule.dll" Private="false" />
     <Reference Include="UnityEngine.InputLegacyModule" HintPath="$(ManagedPath)\UnityEngine.InputLegacyModule.dll" Private="false" />
     <!-- The game reads keys through Unity's new Input System, so I do the same. -->

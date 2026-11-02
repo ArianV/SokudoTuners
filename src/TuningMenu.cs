@@ -171,6 +171,8 @@ namespace SokudoTuners
             IsOpen = true;
             _openedAt = Time.unscaledTime;
             GarageCamera.Begin(vehicle);
+            MenuSounds.Prepare();
+            MenuSounds.Click();
 
             foreach (Tile tile in _tiles)
                 tile.Offset = 0f;
@@ -184,6 +186,7 @@ namespace SokudoTuners
             if (!IsOpen)
                 return;
 
+            MenuSounds.Click();
             // Leaving the state stack hands control back to the car, which puts the mouse and HUD back the way it likes them.
             if (_state != null)
                 _state.RemoveFromDefaultParent();
@@ -238,14 +241,23 @@ namespace SokudoTuners
 
         private static void Select(int index)
         {
-            _selected = (index + Categories.Length) % Categories.Length;
+            index = (index + Categories.Length) % Categories.Length;
+            if (index != _selected)
+                MenuSounds.Move();
+
+            _selected = index;
             _preview = Upgrades.GetTier(_vehicle, Categories[_selected]);
             Refresh();
         }
 
         private static void SetPreview(int tier)
         {
-            _preview = Mathf.Clamp(tier, 0, Upgrades.MaxTier);
+            tier = Mathf.Clamp(tier, 0, Upgrades.MaxTier);
+            // The pitch climbs with the tier, so going up the ladder sounds like going up.
+            if (tier != _preview)
+                MenuSounds.Move(0.9f + 0.1f * tier);
+
+            _preview = tier;
             Refresh();
         }
 
@@ -257,6 +269,7 @@ namespace SokudoTuners
 
             Upgrades.SetTier(_vehicle, type, _preview);
             _installFlash = 1f;
+            MenuSounds.Install();
             Melon<SokudoTunersMod>.Logger.Msg(
                 $"Installed {Upgrades.TierName(_preview)} {type} on '{_vehicle.VehicleName}' ({Upgrades.Describe(type, _preview)})");
             Refresh();
@@ -265,6 +278,7 @@ namespace SokudoTuners
         private static void ToggleUnits()
         {
             ModSettings.UseMph = !ModSettings.UseMph;
+            MenuSounds.Click();
             Refresh();
         }
 
