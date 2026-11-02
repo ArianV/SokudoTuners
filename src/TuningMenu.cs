@@ -13,15 +13,9 @@ using UnityEngine.UI;
 
 namespace SokudoTuners
 {
-    // The garage. F4 in the driver's seat opens it. Racing-game style: part list down the left with the car
-    // still in view on the right, tier pips, before/after stat bars, and a key prompt bar along the bottom.
-    //
-    // It joins the game's own state stack like a built-in menu, so while it's open the car ignores driving
-    // input, the mouse is free, and Escape closes it instead of opening the pause menu.
-    // Upgrades are free for now. Prices slot in next to the install button later.
+    // F4 garage. It pushes its own MonoState so the car ignores input and Esc closes it like the game's menus.
     public static class TuningMenu
     {
-        // NFS Heat-ish neon: hot pink for the selection and upgrades, cyan for what's installed (same as the nitro).
         private static readonly Color Pink = new Color(1f, 0.16f, 0.52f);
         private static readonly Color Cyan = new Color(0.3f, 0.9f, 1f);
         private static readonly Color Downgrade = new Color(1f, 0.35f, 0.3f);
@@ -42,7 +36,6 @@ namespace SokudoTuners
             "Tank size, refill rate and boost"
         };
 
-        // Layout, in 1080p reference units. The canvas scaler takes care of other resolutions.
         private const float Left = 70f;
         private const float TileTop = 240f;
         private const float TileStep = 84f;
@@ -106,10 +99,9 @@ namespace SokudoTuners
         private static float _openedAt;
         private static float _installFlash;
 
-        // Called every frame from the mod.
         public static void Update()
         {
-            // The canvas dies with the scene. If that happens while it's open, reset so the next open starts clean.
+            // The canvas went with the scene.
             if (IsOpen && _root == null)
                 OnClosed();
 
@@ -124,7 +116,6 @@ namespace SokudoTuners
                 return;
             }
 
-            // Kicked out of the car somehow (arrested, knocked out). The menu has nothing to tune any more.
             if (LocalDriver.GetVehicle() != _vehicle)
             {
                 Close();
@@ -135,8 +126,6 @@ namespace SokudoTuners
             Animate();
         }
 
-        // ---------------------------------------------------------------- opening and closing
-
         private static void TryOpen()
         {
             LandVehicle vehicle = LocalDriver.GetVehicle();
@@ -145,7 +134,7 @@ namespace SokudoTuners
             if (Singleton<PauseMenu>.InstanceExists && Singleton<PauseMenu>.Instance.IsPaused)
                 return;
 
-            // The car coasts while the menu has the controls, so tuning at speed would mean crashing blind.
+            // The car coasts while the menu has the controls.
             float stopSpeed = ModSettings.UseMph ? 10f : 16f;
             if (ModSettings.DisplaySpeed(vehicle.Rb.velocity.magnitude) > stopSpeed)
             {
@@ -164,7 +153,7 @@ namespace SokudoTuners
 
             _state.PushToDefaultParent();
             _exitListener = OnExit;
-            // The pause menu listens at -9999999. Anything higher hears Escape first.
+            // The pause menu listens at -9999999.
             GameInput.RegisterExitListener(_exitListener, 10);
 
             _canvas.enabled = true;
@@ -187,7 +176,6 @@ namespace SokudoTuners
                 return;
 
             MenuSounds.Click();
-            // Leaving the state stack hands control back to the car, which puts the mouse and HUD back the way it likes them.
             if (_state != null)
                 _state.RemoveFromDefaultParent();
             OnClosed();
@@ -214,8 +202,6 @@ namespace SokudoTuners
                 Close();
             }
         }
-
-        // ---------------------------------------------------------------- input and actions
 
         private static void HandleKeys(Keyboard keyboard)
         {
@@ -253,7 +239,6 @@ namespace SokudoTuners
         private static void SetPreview(int tier)
         {
             tier = Mathf.Clamp(tier, 0, Upgrades.MaxTier);
-            // The pitch climbs with the tier, so going up the ladder sounds like going up.
             if (tier != _preview)
                 MenuSounds.Move(0.9f + 0.1f * tier);
 
@@ -282,7 +267,6 @@ namespace SokudoTuners
             Refresh();
         }
 
-        // Puts every label, pip and bar target in line with the current selection. Animate() does the easing.
         private static void Refresh()
         {
             for (int i = 0; i < _tiles.Count; i++)
@@ -317,7 +301,6 @@ namespace SokudoTuners
                 else
                     color = Empty;
                 _tierPips[t].color = color;
-                // The previewed tier stands taller so it's obvious which one A/D is on.
                 _tierPips[t].rectTransform.localScale = new Vector3(1f, t == _preview ? 1.7f : 1f, 1f);
                 _tierPipLabels[t].color = t == _preview ? Color.white : Dim;
             }
@@ -348,13 +331,10 @@ namespace SokudoTuners
             _unitsLabel.text = ModSettings.UseMph ? "UNITS: MPH" : "UNITS: KM/H";
         }
 
-        // ---------------------------------------------------------------- animation
-
         private static void Animate()
         {
             float dt = Time.unscaledDeltaTime;
 
-            // Slide in from the left and fade up, easing out so it lands softly.
             float t = Mathf.Clamp01((Time.unscaledTime - _openedAt) / OpenAnimSeconds);
             float eased = 1f - Mathf.Pow(1f - t, 3f);
             _content.anchoredPosition = new Vector2(Mathf.Lerp(-120f, 0f, eased), 0f);
@@ -380,7 +360,6 @@ namespace SokudoTuners
                 row.Change.anchorMax = new Vector2(row.ShownChange, 1f);
             }
 
-            // Install flashes the button cyan and fades back.
             _installFlash = Mathf.Max(0f, _installFlash - dt * 1.5f);
             bool canInstall = _preview != Upgrades.GetTier(_vehicle, Categories[_selected]);
             Color buttonColor = canInstall ? Pink : new Color(1f, 1f, 1f, 0.15f);
@@ -396,11 +375,8 @@ namespace SokudoTuners
             }
         }
 
-        // ---------------------------------------------------------------- building the UI
-
         private static bool Build()
         {
-            // I borrow the font from the game's speedometer so the menu matches the rest of the UI.
             if (!Singleton<VehicleCanvas>.InstanceExists || Singleton<VehicleCanvas>.Instance.SpeedText == null)
                 return false;
             _font = Singleton<VehicleCanvas>.Instance.SpeedText.font;
@@ -409,7 +385,7 @@ namespace SokudoTuners
             _canvas = _root.AddComponent<Canvas>();
             _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             _canvas.sortingOrder = 500;
-            // The game has its own class called CanvasScaler, so I name Unity's in full.
+            // The game has its own CanvasScaler class.
             UnityEngine.UI.CanvasScaler scaler = _root.AddComponent<UnityEngine.UI.CanvasScaler>();
             scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
@@ -417,8 +393,7 @@ namespace SokudoTuners
             _root.AddComponent<GraphicRaycaster>();
             _group = _root.AddComponent<CanvasGroup>();
 
-            // My own entry in the game's state stack. These properties free the mouse, hide the game HUD and
-            // compass, and lock walking and looking. CameraMode must stay Vehicle or the camera leaves the car.
+            // CameraMode has to stay Vehicle or the camera leaves the car.
             _state = _root.AddComponent<MonoState>();
             _state.Properties = new StateProperties(
                 StateProperties.EMouseState.Free,
@@ -436,7 +411,6 @@ namespace SokudoTuners
 
             RectTransform root = (RectTransform)_root.transform;
 
-            // Dark gradient over the left of the screen so the text reads, fading out before it reaches the car.
             RectTransform shade = Stretch(root, "Shade", new Vector2(0f, 0f), new Vector2(0.62f, 1f));
             Image shadeImage = shade.gameObject.AddComponent<Image>();
             shadeImage.sprite = GradientSprite();
@@ -487,7 +461,6 @@ namespace SokudoTuners
                     Pips = new Image[Upgrades.MaxTier]
                 };
 
-                // Little installed-tier pips on the right of each tile, so the whole build reads at a glance.
                 for (int p = 0; p < Upgrades.MaxTier; p++)
                     tile.Pips[p] = AddImage(rect, pipSprite, new Vector2(330f + p * 26f, -32f), new Vector2(20f, 10f), Empty);
 
@@ -548,7 +521,6 @@ namespace SokudoTuners
             _installLabel.alignment = TextAlignmentOptions.Center;
         }
 
-        // FiveM-style key hints along the bottom of the screen.
         private static void BuildPromptBar(RectTransform root)
         {
             RectTransform bar = Stretch(root, "Prompts", new Vector2(0f, 0f), new Vector2(1f, 0f));
@@ -563,7 +535,7 @@ namespace SokudoTuners
             x = AddPrompt(bar, chipSprite, x, "A/D", "TIER");
             x = AddPrompt(bar, chipSprite, x, "ENTER", "INSTALL");
             x = AddPrompt(bar, chipSprite, x, "ESC", "EXIT");
-            // Units goes last because its text changes width, and nothing sits after it to get pushed around.
+            // Units goes last since its width changes.
             AddPrompt(bar, chipSprite, x, "U", "", out _unitsLabel);
         }
 
@@ -586,9 +558,6 @@ namespace SokudoTuners
             return x + chipWidth + 10f + actionText.GetPreferredValues(action).x + 34f;
         }
 
-        // ---------------------------------------------------------------- small UI helpers
-
-        // Everything in the menu is positioned from the top-left, like reading a page.
         private static RectTransform Node(RectTransform parent, string name, Vector2 position, Vector2 size)
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
@@ -623,7 +592,6 @@ namespace SokudoTuners
         {
             Image image = rect.gameObject.AddComponent<Image>();
             image.color = color;
-            // Only the things I turn into buttons should catch the mouse.
             image.raycastTarget = false;
             return image;
         }
@@ -643,7 +611,6 @@ namespace SokudoTuners
             return text;
         }
 
-        // A click target with no built-in hover tint or keyboard navigation. I drive the visuals myself.
         private static void MakeButton(GameObject go, UnityEngine.Events.UnityAction onClick)
         {
             Button button = go.AddComponent<Button>();
@@ -661,10 +628,6 @@ namespace SokudoTuners
             Singleton<NotificationsManager>.Instance.SendNotification(title, subtitle, _notifyIcon, 3f);
         }
 
-        // ---------------------------------------------------------------- textures drawn in code
-
-        // The slanted parallelogram behind tiles, pips, chips and the install button. That forward lean is most
-        // of what makes it read as a racing game. Cached per size since several things share one.
         private static Sprite SlantSprite(int width, int height, int slant)
         {
             string key = $"{width}x{height}/{slant}";
@@ -676,8 +639,6 @@ namespace SokudoTuners
             return sprite;
         }
 
-        // Leans right like italic text: the top edge is shifted right by `slant` pixels. Edges get one pixel
-        // of soft alpha so they don't look jagged.
         private static Sprite MakeSlantSprite(int width, int height, int slant, Color32 color)
         {
             Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
@@ -702,7 +663,6 @@ namespace SokudoTuners
             return Sprite.Create(texture, new Rect(0f, 0f, width, height), new Vector2(0.5f, 0.5f), 100f);
         }
 
-        // Solid on the left half, fading to clear on the right.
         private static Sprite GradientSprite()
         {
             if (_sprites.TryGetValue("gradient", out Sprite cached) && cached != null)

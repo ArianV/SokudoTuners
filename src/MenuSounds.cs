@@ -8,9 +8,7 @@ using UnityEngine;
 
 namespace SokudoTuners
 {
-    // Garage menu sounds, borrowed from the game's own UI so they match its menus and the mod ships no audio files.
-    // The clips are already loaded in memory (on buttons and screens that may be hidden), so I look them up
-    // instead of loading anything. They play as UI audio, so the game's UI volume slider controls them.
+    // Reuses the game's own UI sounds, so I ship no audio and the UI volume slider applies.
     public static class MenuSounds
     {
         private static readonly AccessTools.FieldRef<ButtonSound, AudioClip> HoverClip =
@@ -18,7 +16,6 @@ namespace SokudoTuners
         private static readonly AccessTools.FieldRef<ButtonSound, AudioClip> ClickClip =
             AccessTools.FieldRefAccess<ButtonSound, AudioClip>("_clickClip");
 
-        // One player per sound, so a quick install right after a move doesn't cut the move sound off.
         private static AudioSourceController _move;
         private static AudioSourceController _click;
         private static AudioSourceController _install;
@@ -32,7 +29,6 @@ namespace SokudoTuners
             Play(_install, 1f);
         }
 
-        // Called when the menu opens. The players belong to the scene, so they're rebuilt after a reload.
         public static void Prepare()
         {
             if (_move != null || !Singleton<AudioManager>.InstanceExists)
@@ -40,7 +36,6 @@ namespace SokudoTuners
 
             AudioClip hover = null;
             AudioClip click = null;
-            // FindObjectsOfTypeAll also finds buttons on menus that aren't open right now.
             foreach (ButtonSound button in Resources.FindObjectsOfTypeAll<ButtonSound>())
             {
                 if (hover == null) hover = HoverClip(button);

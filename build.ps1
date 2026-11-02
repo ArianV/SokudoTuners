@@ -1,13 +1,10 @@
-# Builds the mod. The csproj copies SokudoTuners.dll into the game's Mods folder after every build.
-# Usage: .\build.ps1            (Debug)
-#        .\build.ps1 Release
+# .\build.ps1 [Release]
 param([string]$Configuration = "Debug")
 
 dotnet build "$PSScriptRoot\SokudoTuners.csproj" -c $Configuration
 $code = $LASTEXITCODE
 
-# MelonLoader reads mods into memory at startup, so the copy works with the game open,
-# but the running game keeps the old version until I restart it.
+# The copy works with the game open, but it keeps running the old DLL until a restart.
 if ($code -eq 0 -and (Get-Process -Name "Schedule I" -ErrorAction SilentlyContinue)) {
     Write-Host "Schedule I is running. Restart it to load the new build." -ForegroundColor Yellow
 }

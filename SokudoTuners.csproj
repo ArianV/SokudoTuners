@@ -1,18 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- Schedule I's Mono runtime is .NET Framework 4.x, so I target net472 to match it. -->
     <TargetFramework>net472</TargetFramework>
     <AssemblyName>SokudoTuners</AssemblyName>
     <RootNamespace>SokudoTuners</RootNamespace>
     <Version>0.1.0</Version>
     <LangVersion>latest</LangVersion>
 
-    <!-- The SDK compiles every .cs file under this folder by default, which would include the
-         2000+ decompiled game files. I only want my own code in src/. -->
+    <!-- Otherwise it compiles the decompiled game code too. -->
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
 
-    <!-- Change this (or pass -p:GamePath=...) if the game lives somewhere else. -->
+    <!-- Override with -p:GamePath=... if the game is installed somewhere else. -->
     <GamePath Condition="'$(GamePath)' == ''">F:\SteamLibrary\steamapps\common\Schedule I</GamePath>
     <ManagedPath>$(GamePath)\Schedule I_Data\Managed</ManagedPath>
     <MelonPath>$(GamePath)\MelonLoader\net35</MelonPath>
@@ -22,32 +20,24 @@
     <Compile Include="src\**\*.cs" />
   </ItemGroup>
 
-  <!-- Private=false so the game's own DLLs aren't copied next to mine. The game already loads them. -->
   <ItemGroup>
     <Reference Include="MelonLoader" HintPath="$(MelonPath)\MelonLoader.dll" Private="false" />
     <Reference Include="0Harmony" HintPath="$(MelonPath)\0Harmony.dll" Private="false" />
     <Reference Include="Assembly-CSharp" HintPath="$(ManagedPath)\Assembly-CSharp.dll" Private="false" />
-    <!-- A few game types live in a second DLL, like the audio type enum. -->
     <Reference Include="ScheduleOne.Core" HintPath="$(ManagedPath)\ScheduleOne.Core.dll" Private="false" />
-    <!-- LandVehicle inherits from FishNet's NetworkBehaviour, so the compiler needs to see FishNet too. -->
     <Reference Include="FishNet.Runtime" HintPath="$(ManagedPath)\FishNet.Runtime.dll" Private="false" />
     <Reference Include="UnityEngine.CoreModule" HintPath="$(ManagedPath)\UnityEngine.CoreModule.dll" Private="false" />
     <Reference Include="UnityEngine.PhysicsModule" HintPath="$(ManagedPath)\UnityEngine.PhysicsModule.dll" Private="false" />
-    <!-- WheelCollider lives in its own module. -->
     <Reference Include="UnityEngine.VehiclesModule" HintPath="$(ManagedPath)\UnityEngine.VehiclesModule.dll" Private="false" />
     <Reference Include="UnityEngine.AudioModule" HintPath="$(ManagedPath)\UnityEngine.AudioModule.dll" Private="false" />
     <Reference Include="UnityEngine.ParticleSystemModule" HintPath="$(ManagedPath)\UnityEngine.ParticleSystemModule.dll" Private="false" />
-    <Reference Include="UnityEngine.InputLegacyModule" HintPath="$(ManagedPath)\UnityEngine.InputLegacyModule.dll" Private="false" />
-    <!-- The game reads keys through Unity's new Input System, so I do the same. -->
     <Reference Include="Unity.InputSystem" HintPath="$(ManagedPath)\Unity.InputSystem.dll" Private="false" />
-    <!-- UI: the game's HUD is Unity UI (uGUI) with TextMeshPro text, so the nitro bar uses the same. -->
     <Reference Include="UnityEngine.UI" HintPath="$(ManagedPath)\UnityEngine.UI.dll" Private="false" />
     <Reference Include="UnityEngine.UIModule" HintPath="$(ManagedPath)\UnityEngine.UIModule.dll" Private="false" />
     <Reference Include="UnityEngine.TextRenderingModule" HintPath="$(ManagedPath)\UnityEngine.TextRenderingModule.dll" Private="false" />
     <Reference Include="Unity.TextMeshPro" HintPath="$(ManagedPath)\Unity.TextMeshPro.dll" Private="false" />
   </ItemGroup>
 
-  <!-- After every build, drop the DLL straight into the game's Mods folder so I can just launch and test. -->
   <Target Name="CopyToMods" AfterTargets="Build">
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(GamePath)\Mods" />
     <Message Importance="high" Text="Copied $(TargetFileName) to $(GamePath)\Mods" />

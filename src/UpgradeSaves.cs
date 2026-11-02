@@ -8,14 +8,8 @@ using ScheduleOne.Vehicles;
 
 namespace SokudoTuners
 {
-    // Keeps each car's upgrades in the save, in a small text file of my own next to the game's files.
-    //
-    // At the end of every save the game deletes any file in the save folder it doesn't recognise
-    // (ClearBaseLevelOutdatedSaves). So right before that sweep I write my file and add its name to the game's
-    // list of approved files. That also means my file is written during the game's own save, so upgrades are
-    // saved exactly when the game is, and quitting without saving loses them the same way it loses everything else.
-    //
-    // A separate file instead of squeezing into the game's vehicle data means uninstalling the mod can't break a save.
+    // Upgrades live in their own file in the save folder, so removing the mod can't break a save.
+    // The game deletes unknown files at the end of every save, so I write mine right before that and add it to the approved list.
     [HarmonyPatch(typeof(SaveManager), "ClearBaseLevelOutdatedSaves")]
     public static class UpgradeSaves
     {
@@ -36,8 +30,6 @@ namespace SokudoTuners
             }
         }
 
-        // LoadManager lives for the whole session, so I only need to hook its load event once.
-        // Called on every scene load until it finds the manager.
         public static void SubscribeToLoads()
         {
             if (_subscribed || !Singleton<LoadManager>.InstanceExists)
@@ -49,7 +41,7 @@ namespace SokudoTuners
 
         private static void OnLoadComplete()
         {
-            // Start clean every time, otherwise loading a second save would carry over the first one's upgrades.
+            // Don't carry upgrades over from another save.
             Upgrades.Clear();
 
             string path = Path.Combine(Singleton<LoadManager>.Instance.LoadedGameFolderPath, FileName);
@@ -66,8 +58,7 @@ namespace SokudoTuners
                 }
             }
 
-            // Engine, tires, brakes and nitro read their tier every physics step, so they just work.
-            // Suspension is set once, so the cars need it applied now.
+            // Suspension is the only upgrade that's set once instead of every step.
             if (!NetworkSingleton<VehicleManager>.InstanceExists)
                 return;
             foreach (LandVehicle vehicle in NetworkSingleton<VehicleManager>.Instance.AllVehicles)

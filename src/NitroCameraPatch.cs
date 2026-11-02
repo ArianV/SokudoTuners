@@ -4,18 +4,13 @@ using UnityEngine;
 
 namespace SokudoTuners
 {
-    // Widens the camera while nitro fires. I don't use the game's own FOV override system for this:
-    // only the highest-priority override applies (so I'd fight drug effects), and the camera eases at
-    // 4 degrees a second, which turns a punchy kick into a slow drift.
-    //
-    // Instead I add my kick after the game sets the FOV, and take it back out before the game runs
-    // next frame. The game's own easing never sees my kick, so the two can't stack up.
+    // Not using the game's FoVChangeSmoother: only the top override applies and it eases at 4 deg/s, way too slow for a kick.
+    // I add the kick after the game sets the FOV and take it back out before its next update so they never stack.
     [HarmonyPatch(typeof(PlayerCamera), "LateUpdate")]
     public static class NitroCameraPatch
     {
         private const float BoostFovKick = 16f;
 
-        // Snaps in fast, fades out slower, like the rush wearing off.
         private const float KickInSpeed = 10f;
         private const float KickOutSpeed = 3f;
 
@@ -29,8 +24,7 @@ namespace SokudoTuners
             if (camera == null || _appliedKick == 0f)
                 return;
 
-            // If something else set the FOV since my last frame (a cutscene, aiming a gun), it has
-            // already replaced my value, so there's nothing of mine left to take out.
+            // Something else (cutscene, aiming) already replaced the FOV.
             if (Mathf.Approximately(camera.fieldOfView, _lastWrittenFov))
                 camera.fieldOfView -= _appliedKick;
             _appliedKick = 0f;

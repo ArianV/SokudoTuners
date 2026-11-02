@@ -3,9 +3,7 @@ using ScheduleOne.Vehicles;
 
 namespace SokudoTuners
 {
-    // Brake upgrade. ApplyThrottle sets brake torque on every wheel each physics step, both for normal braking
-    // (holding S while moving forward) and the handbrake. I scale whatever it set. The engine upgrade is also
-    // a postfix on ApplyThrottle; Harmony runs both, they don't replace each other.
+    // ApplyThrottle sets brake torque every step, handbrake included, so I scale whatever it set.
     [HarmonyPatch(typeof(LandVehicle), "ApplyThrottle")]
     public static class BrakePatch
     {

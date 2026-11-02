@@ -1,16 +1,12 @@
-# Decompiled game code. It's the developer's copyrighted code, so it stays on my machine and never goes in the repo.
+# Decompiled game code, stays local
 decompiled/
-
-# The game's own DLLs, if I ever copy them in for referencing
 lib/
 
-# Build output
 bin/
 obj/
 *.user
 *.suo
 
-# Editor / OS clutter
 .vs/
 .vscode/
 .idea/

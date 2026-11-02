@@ -4,11 +4,9 @@ using UnityEngine;
 
 namespace SokudoTuners
 {
-    // Testing helpers while I balance the upgrades: automatic 0-60 and 60-0 timers in the console
-    // (0-100 / 100-0 in km/h), so tiers can be compared with numbers, not feel.
+    // 0-60 and 60-0 timers in the console so I can compare tiers with numbers.
     public static class DebugTools
     {
-        // On the HUD's speed scale, in whichever unit the HUD is showing.
         private static float TimerTarget => ModSettings.UseMph ? 60f : 100f;
 
         private static float _accelStart = -1f;
@@ -16,7 +14,6 @@ namespace SokudoTuners
         private static bool _brakeArmed;
         private static Vector3 _brakeStartPosition;
 
-        // Called every frame from the mod.
         public static void Update()
         {
             LandVehicle vehicle = LocalDriver.GetVehicle();
@@ -33,7 +30,6 @@ namespace SokudoTuners
             UpdateBrakingTimer(vehicle, speed);
         }
 
-        // Starts when I pull away from a standstill and stops at the target. Lifting off or stopping cancels it.
         private static void UpdateAccelerationTimer(LandVehicle vehicle, float speed)
         {
             if (speed < 1f)
@@ -60,9 +56,7 @@ namespace SokudoTuners
             }
         }
 
-        // Starts the moment the speed falls through the target while braking (S while rolling forward), and stops
-        // when the car does. Starting the clock as soon as I hit the brakes made runs from 110 and from 65 look
-        // like the same test. Letting go of the brake cancels it. The distance is real distance in the world.
+        // The clock starts when the speed drops through the target, so every run is a true 60-0 however fast I was going.
         private static void UpdateBrakingTimer(LandVehicle vehicle, float speed)
         {
             bool braking = vehicle.currentThrottle < 0f && vehicle.Speed_Kmh > 0f;
@@ -103,7 +97,6 @@ namespace SokudoTuners
                    $"nitro {Short(vehicle, UpgradeType.Nitro)}";
         }
 
-        // "S" or "T2" keeps the log line short enough to read.
         private static string Short(LandVehicle vehicle, UpgradeType type)
         {
             int tier = Upgrades.GetTier(vehicle, type);

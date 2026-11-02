@@ -15,52 +15,41 @@ namespace SokudoTuners
         Nitro
     }
 
-    // One bar in the tuning menu. Value is 0-1 measured against the best tier, so Race always fills the bar.
+    // Value is 0-1 against the Race tier.
     public struct UpgradeStat
     {
         public string Label;
         public float Value;
     }
 
-    // Which tier each car has in each category. Tier 0 is stock.
-    // Upgrades are multipliers on the car's own prefab values, so a tuned van stays slower than a
-    // tuned Cheetah but both feel the same step up.
+    // Multipliers on each car's own values. Tier 0 is stock.
     public static class Upgrades
     {
         public const int MaxTier = 3;
 
         private static readonly string[] TierNames = { "Stock", "Street", "Sport", "Race" };
 
-        // Torque multiplier per engine tier. More torque means harder acceleration and a higher top speed,
-        // since nothing in the game caps speed apart from drag and friction.
         private static readonly float[] EngineTorque = { 1f, 1.3f, 1.65f, 2.1f };
 
-        // Grip multipliers per tire tier. Forward grip is what puts engine power down off the line.
-        // Sideways grip rises more gently so the handbrake still kicks the back out for drifts.
+        // Side grip rises slower so handbrake drifts still work.
         private static readonly float[] TireForwardGrip = { 1f, 1.25f, 1.5f, 1.8f };
         private static readonly float[] TireSideGrip = { 1f, 1.15f, 1.3f, 1.45f };
 
-        // Stiffer springs with matching damping, so the car rolls less without turning bouncy.
-        // Downforce climbs fastest because it only kicks in at speed, which is exactly where nitro puts you.
         private static readonly float[] SuspensionSpring = { 1f, 1.2f, 1.4f, 1.65f };
         private static readonly float[] SuspensionDamper = { 1f, 1.2f, 1.45f, 1.7f };
         private static readonly float[] SuspensionDownforce = { 1f, 1.5f, 2f, 3f };
 
-        // Brake torque multiplier. Kept moderate because too much just locks the wheels and the car skids further.
+        // Too much and the wheels just lock.
         private static readonly float[] BrakeTorque = { 1f, 1.3f, 1.6f, 2f };
 
-        // Nitro: a bigger tank, a faster refill and a harder push per tier. 18 m/s² at stock is almost 2g.
-        // The speed cap is real physics km/h (about 200 / 209 / 217 / 226 mph on the HUD). I keep it from
-        // climbing much because Unity's wheel physics gets jittery at silly speeds.
+        // The speed cap is physics km/h. Wheel colliders get jittery much past this.
         private static readonly float[] NitroTank = { 5f, 6.5f, 8f, 10f };
         private static readonly float[] NitroRefill = { 12f, 10f, 8f, 6f };
         private static readonly float[] NitroPush = { 18f, 21f, 25f, 30f };
         private static readonly float[] NitroSpeedCap = { 230f, 240f, 250f, 260f };
 
-        // Keyed by the car's save GUID rather than the Unity object, so per-car saving can plug straight in later.
         private static readonly Dictionary<Guid, int[]> _tiers = new Dictionary<Guid, int[]>();
 
-        // For upgrades that are set once rather than patched every physics step (suspension).
         public static event Action<LandVehicle, UpgradeType> TierChanged;
 
         public static int GetTier(LandVehicle vehicle, UpgradeType type)
@@ -73,9 +62,7 @@ namespace SokudoTuners
             _tiers.Clear();
         }
 
-        // The save file is plain text so it's easy to read and fix by hand:
-        //   <car GUID>=<engine>,<tires>,<suspension>,<brakes>,<nitro>
-        // Only cars with at least one upgrade are written.
+        // One car per line: GUID=engine,tires,suspension,brakes,nitro
         public static string Serialize()
         {
             StringBuilder text = new StringBuilder();
@@ -89,8 +76,7 @@ namespace SokudoTuners
             return text.ToString();
         }
 
-        // Returns how many cars it read. Lines it can't make sense of are skipped rather than failing the whole
-        // load, and a file from a future version with more categories still loads the ones I know about.
+        // Skips bad lines instead of failing the whole load.
         public static int Deserialize(string text)
         {
             int count = 0;
@@ -148,7 +134,6 @@ namespace SokudoTuners
         public static float NitroAcceleration(LandVehicle vehicle) => NitroPush[GetTier(vehicle, UpgradeType.Nitro)];
         public static float NitroMaxSpeedKmh(LandVehicle vehicle) => NitroSpeedCap[GetTier(vehicle, UpgradeType.Nitro)];
 
-        // The bars the tuning menu shows for each category.
         public static UpgradeStat[] GetStats(UpgradeType type, int tier)
         {
             switch (type)
@@ -162,7 +147,7 @@ namespace SokudoTuners
                 case UpgradeType.Brakes:
                     return new[] { Stat("STOPPING", BrakeTorque, tier) };
                 case UpgradeType.Nitro:
-                    // Refill is a time, so lower is better. I flip it so a faster refill still means a longer bar.
+                    // Lower refill time is better, so flip it.
                     return new[]
                     {
                         Stat("CAPACITY", NitroTank, tier),
@@ -179,7 +164,6 @@ namespace SokudoTuners
             return new UpgradeStat { Label = label, Value = values[tier] / values[MaxTier] };
         }
 
-        // What the tier does, for the log line when it changes and the menu's small print.
         public static string Describe(UpgradeType type, int tier)
         {
             switch (type)

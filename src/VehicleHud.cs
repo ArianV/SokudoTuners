@@ -8,24 +8,16 @@ using UnityEngine.UI;
 
 namespace SokudoTuners
 {
-    // Racing-style speedometer with a curved nitro bar down its left side. It replaces the game's plain
-    // speed text, which also freezes above ~126 km/h because the game's velocity smoother throws away
-    // samples over 25 m/s as "unreasonable". I read the car's Rigidbody instead, which has no cap.
-    //
-    // It lives on the game's vehicle canvas, so it shows and hides with the vehicle HUD on its own.
-    // All the round shapes are textures I draw in code at startup, so the mod stays a single DLL.
+    // Replaces the game's speed text, which freezes around 126 km/h because SmoothedVelocityCalculator drops samples over 25 m/s.
     public static class VehicleHud
     {
-        // Layout, in the vehicle canvas' units (roughly pixels at 1080p).
         private const float DialSize = 230f;
         private const float ScreenMargin = 40f;
 
-        // Angles are maths-style: degrees counter-clockwise from pointing right. The dial sweeps
-        // clockwise from bottom-left (225) round to bottom-right (-45), leaving a gap at the bottom.
+        // Degrees counter-clockwise from pointing right. Zero sits at 225, max at -45.
         private const float DialStartAngle = 225f;
         private const float DialSweep = 270f;
 
-        // The nitro bar runs up the outside left of the dial, from bottom-left to top-left.
         private const float NitroStartAngle = 240f;
         private const float NitroSweep = 120f;
 
@@ -53,34 +45,27 @@ namespace SokudoTuners
         private static TextMeshProUGUI _speedNumber;
         private static float _shownSpeed;
 
-        // Called every frame from the mod.
         public static void Update()
         {
             bool imperial = ModSettings.UseMph;
 
-            // Rebuild if the unit setting changed, so the dial numbers match.
             if (_root != null && imperial != _builtImperial)
                 Object.Destroy(_root);
 
-            // Unity's == null is also true for objects destroyed by a scene change, so this rebuilds
-            // the HUD after going back to the menu and loading in again.
             if (_root == null && !TryBuild(imperial))
                 return;
 
-            // Passengers see the vehicle HUD too, but the gauge is only for the driver. It also steps aside
-            // while the tuning menu is open so the garage screen stays clean.
             LandVehicle vehicle = LocalDriver.GetVehicle();
             _root.SetActive(vehicle != null && !TuningMenu.IsOpen);
             if (vehicle == null || TuningMenu.IsOpen)
                 return;
 
-            // The game keeps writing its own speed text every frame, so I keep it switched off.
+            // The game rewrites its speed text every frame.
             if (_gameSpeedText != null)
                 _gameSpeedText.enabled = false;
 
             float speed = ModSettings.DisplaySpeed(vehicle.Rb.velocity.magnitude);
 
-            // Ease the needle towards the real value so it sweeps instead of twitching.
             _shownSpeed = Mathf.Lerp(_shownSpeed, speed, 1f - Mathf.Exp(-12f * Time.deltaTime));
             float t = Mathf.Clamp01(_shownSpeed / _dialMax);
 
@@ -111,7 +96,7 @@ namespace SokudoTuners
             BuildSprites();
             TMP_FontAsset font = _gameSpeedText.font;
 
-            // Tier 3 nitro maxes out around 364 km/h (226 mph) on the game's scale, so the dial goes a bit past that.
+            // Race nitro tops out around 226 mph.
             _builtImperial = imperial;
             _dialMax = imperial ? 240f : 400f;
             float majorStep = imperial ? 20f : 40f;
@@ -127,7 +112,6 @@ namespace SokudoTuners
 
             float radius = DialSize / 2f;
 
-            // Nitro bar first so the dial draws over its inner edge.
             float nitroSize = DialSize + 44f;
             AddArc(root, _arcRingSprite, nitroSize, NitroStartAngle, NitroSweep / 360f, NitroTrackColor);
             _nitroFill = AddArc(root, _arcRingSprite, nitroSize, NitroStartAngle, 0f, NitroReadyColor);
@@ -141,7 +125,6 @@ namespace SokudoTuners
             AddArc(root, _arcRingSprite, arcSize, DialStartAngle, DialSweep / 360f, TrackColor);
             _speedArc = AddArc(root, _arcRingSprite, arcSize, DialStartAngle, 0f, SpeedArcColor);
 
-            // Ticks and numbers. The top 20% of the dial is the red zone.
             for (float v = 0f; v <= _dialMax + 0.01f; v += minorStep)
             {
                 float angle = DialStartAngle - DialSweep * (v / _dialMax);
@@ -158,13 +141,11 @@ namespace SokudoTuners
                         new Vector2(40f, 20f), color);
             }
 
-            // Needle grows up from the centre, so its pivot sits at its base.
             Image needle = AddImage(root, null, Vector2.zero, new Vector2(4f, radius - 30f), NeedleColor);
             _needle = needle.rectTransform;
             _needle.pivot = new Vector2(0.5f, 0f);
             AddImage(root, _discSprite, Vector2.zero, new Vector2(18f, 18f), NeedleColor);
 
-            // Digital readout sits in the gap at the bottom, drawn last so the needle never covers it.
             _speedNumber = AddText(root, font, "0", 40f, new Vector2(0f, -42f), new Vector2(140f, 44f), Color.white);
             AddText(root, font, imperial ? "MPH" : "KM/H", 14f, new Vector2(0f, -70f), new Vector2(80f, 18f),
                 new Color(1f, 1f, 1f, 0.7f));
@@ -179,8 +160,7 @@ namespace SokudoTuners
             return new Vector2(Mathf.Cos(rad), Mathf.Sin(rad)) * radius;
         }
 
-        // An arc is a ring sprite drawn as a radial fill. The fill starts at the top and runs clockwise,
-        // so I rotate the whole image to move that start point to the angle I want.
+        // Radial fill always starts at the top, so I rotate the image to move the start.
         private static Image AddArc(RectTransform parent, Sprite ring, float size, float startAngle, float fill, Color color)
         {
             Image arc = AddImage(parent, ring, Vector2.zero, new Vector2(size, size), color);
@@ -205,7 +185,6 @@ namespace SokudoTuners
             Image image = go.AddComponent<Image>();
             image.sprite = sprite;
             image.color = color;
-            // Don't let the HUD swallow mouse clicks meant for the game.
             image.raycastTarget = false;
             return image;
         }
@@ -231,7 +210,6 @@ namespace SokudoTuners
             return text;
         }
 
-        // Textures aren't tied to a scene, so these survive going back to the menu and I only draw them once.
         private static void BuildSprites()
         {
             if (_discSprite == null) _discSprite = MakeRingSprite(256, 0f);
@@ -239,8 +217,6 @@ namespace SokudoTuners
             if (_arcRingSprite == null) _arcRingSprite = MakeRingSprite(256, 0.88f);
         }
 
-        // White ring (or a full disc when innerRatio is 0) with soft one-pixel edges so it isn't jagged.
-        // The Image tints it to whatever colour I need.
         private static Sprite MakeRingSprite(int size, float innerRatio)
         {
             Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false);

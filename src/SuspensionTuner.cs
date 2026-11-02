@@ -5,10 +5,7 @@ using UnityEngine;
 
 namespace SokudoTuners
 {
-    // Suspension upgrade: stiffer springs and dampers, plus more downforce.
-    // Unlike grip and torque, the game never touches these after the car spawns, so I set them once when the
-    // tier changes instead of patching every physics step. I keep each car's stock values so that going back
-    // to Stock puts them back exactly, and so tiers always scale from stock rather than stacking on each other.
+    // The game never touches these after the car spawns, so I set them once per tier change and scale from the stock values.
     public static class SuspensionTuner
     {
         private static readonly AccessTools.FieldRef<LandVehicle, float> Downforce =
@@ -37,7 +34,6 @@ namespace SokudoTuners
                     _stockSprings[collider] = stock;
                 }
 
-                // JointSpring is a struct like WheelFrictionCurve: copy, change, assign back.
                 JointSpring spring = stock;
                 spring.spring *= springMultiplier;
                 spring.damper *= damperMultiplier;

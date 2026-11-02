@@ -5,7 +5,6 @@ namespace SokudoTuners
 {
     public static class LocalDriver
     {
-        // The car I'm driving, or null when I'm on foot or riding as a passenger.
         public static LandVehicle GetVehicle()
         {
             if (Player.Local == null || Player.Local.CurrentVehicle == null)
@@ -15,7 +14,7 @@ namespace SokudoTuners
             return vehicle != null && vehicle.LocalPlayerIsDriver ? vehicle : null;
         }
 
-        // The tank keeps its last state when I hop out mid-boost, so effects check I'm still driving too.
+        // The tank keeps its state if I hop out mid-boost.
         public static bool IsBoosting => NitroTank.IsBoosting && GetVehicle() != null;
     }
 }

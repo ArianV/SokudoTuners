@@ -4,9 +4,7 @@ using UnityEngine;
 
 namespace SokudoTuners
 {
-    // Tire upgrade. The game rewrites each wheel's grip curves every physics step in ApplyFriction (rain and
-    // handbrake included), so setting grip once wouldn't stick. I scale the stiffness right after it runs,
-    // which keeps the rain and handbrake drift behaviour, just with grippier rubber.
+    // ApplyFriction rewrites grip every step (rain, handbrake), so I scale it right after.
     [HarmonyPatch(typeof(Wheel), "ApplyFriction")]
     public static class TirePatch
     {
@@ -19,8 +17,6 @@ namespace SokudoTuners
             if (vehicle == null || Upgrades.GetTier(vehicle, UpgradeType.Tires) == 0)
                 return;
 
-            // WheelFrictionCurve is a struct, so I get a copy, change it, and assign it back.
-            // Changing the copy alone would do nothing.
             WheelCollider wheel = __instance.wheelCollider;
 
             WheelFrictionCurve forward = wheel.forwardFriction;

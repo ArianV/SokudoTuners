@@ -5,8 +5,7 @@ using UnityEngine;
 
 namespace SokudoTuners
 {
-    // Blue exhaust flames while nitro fires. Every car's prefab already has its exhaust smoke particles
-    // placed on the tailpipes (VehicleFX.exhaustFX), so I put a flame on each of those.
+    // Puts a flame on each exhaust point the prefab already has (VehicleFX.exhaustFX).
     public static class NitroFlames
     {
         private const string FlameName = "SokudoNitroFlame";
@@ -15,14 +14,12 @@ namespace SokudoTuners
         private static readonly List<ParticleSystem> _flames = new List<ParticleSystem>();
         private static Material _material;
 
-        // Called every frame from the mod.
         public static void Update()
         {
             LandVehicle vehicle = LocalDriver.GetVehicle();
 
             if (vehicle != _vehicle)
             {
-                // Got out or switched cars. Stop the old flames, they die out on their own.
                 SetEmitting(false);
                 _flames.Clear();
                 _vehicle = vehicle;
@@ -44,7 +41,7 @@ namespace SokudoTuners
             }
         }
 
-        // The flames stay on the car after I get out, so reuse them instead of stacking new ones every time.
+        // Reuse the flames left on the car from last time.
         private static void FindOrCreateFlames(LandVehicle vehicle)
         {
             foreach (ParticleSystem existing in vehicle.GetComponentsInChildren<ParticleSystem>(true))
@@ -59,7 +56,7 @@ namespace SokudoTuners
                     if (exhaust != null)
                         _flames.Add(CreateFlame(exhaust.transform, Vector3.zero, Quaternion.identity));
 
-            // No exhaust on this car, so fire one from the middle of the back bumper, pointing backwards.
+            // No exhausts on this car, use the rear bumper.
             if (_flames.Count == 0)
             {
                 BoxCollider box = vehicle.boundingBox;
@@ -79,11 +76,10 @@ namespace SokudoTuners
             go.transform.localPosition = localPosition;
             go.transform.localRotation = localRotation;
 
-            // A new ParticleSystem starts playing with Unity's defaults, so stop it while I set it up.
+            // AddComponent starts it playing with Unity's defaults.
             ParticleSystem ps = go.AddComponent<ParticleSystem>();
             ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
 
-            // Short-lived, fast particles in local space read as a jet of flame stuck to the pipe.
             ParticleSystem.MainModule main = ps.main;
             main.loop = true;
             main.startLifetime = new ParticleSystem.MinMaxCurve(0.08f, 0.16f);
@@ -102,7 +98,6 @@ namespace SokudoTuners
             shape.angle = 6f;
             shape.radius = 0.04f;
 
-            // White-hot at the pipe, blue in the middle, fading out at the tip.
             Gradient gradient = new Gradient();
             gradient.SetKeys(
                 new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(new Color(0.4f, 0.85f, 1f), 0.3f), new GradientColorKey(new Color(0.1f, 0.3f, 1f), 1f) },
@@ -123,8 +118,7 @@ namespace SokudoTuners
             return ps;
         }
 
-        // A plain unlit material with a soft round dot texture. Without the texture every particle is a hard square.
-        // Sprites/Default ships in every Unity build, so I can count on finding it.
+        // Sprites/Default is in every build. Without the dot texture the particles are hard squares.
         private static Material GetMaterial()
         {
             if (_material != null)
