@@ -28,5 +28,10 @@ namespace SokudoTuners
             NitroFlames.Update();
             DebugTools.Update();
         }
+
+        public override void OnLateUpdate()
+        {
+            GarageCamera.LateUpdate();
+        }
     }
 }

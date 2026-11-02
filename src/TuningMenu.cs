@@ -170,6 +170,7 @@ namespace SokudoTuners
             _canvas.enabled = true;
             IsOpen = true;
             _openedAt = Time.unscaledTime;
+            GarageCamera.Begin(vehicle);
 
             foreach (Tile tile in _tiles)
                 tile.Offset = 0f;
