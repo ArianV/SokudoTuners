@@ -1,6 +1,6 @@
 using MelonLoader;
 
-[assembly: MelonInfo(typeof(SokudoTuners.SokudoTunersMod), "Sokudo Tuners", "0.1.0", "Arian Vahdat")]
+[assembly: MelonInfo(typeof(SokudoTuners.SokudoTunersMod), "Sokudo Tuners", "1.0.0", "Arian Vahdat")]
 [assembly: MelonGame("TVGS", "Schedule I")]
 
 namespace SokudoTuners
@@ -16,7 +16,6 @@ namespace SokudoTuners
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
         {
-            LoggerInstance.Msg($"Scene loaded: {sceneName} ({buildIndex})");
             UpgradeSaves.SubscribeToLoads();
         }
 

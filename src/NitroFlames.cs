@@ -65,7 +65,7 @@ namespace SokudoTuners
                     Quaternion.Euler(0f, 180f, 0f)));
             }
 
-            Melon<SokudoTunersMod>.Logger.Msg($"Added {_flames.Count} nitro flame(s) to '{vehicle.VehicleName}' " +
+            ModSettings.LogDebug($"Added {_flames.Count} nitro flame(s) to '{vehicle.VehicleName}' " +
                 $"({(fx != null ? "on its exhausts" : "no exhausts found, using the rear bumper")}).");
         }
 

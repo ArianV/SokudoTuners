@@ -63,7 +63,7 @@ namespace SokudoTuners
             _click = Create(audio, click, 0.8f);
             _install = Create(audio, success ?? click, 1f);
 
-            Melon<SokudoTunersMod>.Logger.Msg(
+            ModSettings.LogDebug(
                 $"Menu sounds: move '{Name(hover)}', click '{Name(click)}', install '{Name(success)}'");
         }
 

@@ -1,38 +1,63 @@
 # Sokudo Tuners
 
-A car tuning mod for Schedule I. Nitro and performance upgrades with an arcade feel, built to make driving actually fun.
+![Sokudo Tuners](https://raw.githubusercontent.com/ArianV/SokudoTuners/main/assets/icon.png)
 
-This is the successor to my older mod, VNitro. I'm rebuilding it from scratch with a lot more planned.
+Arcade car tuning for Schedule I. Nitro, a racing speedometer and a full tuning garage with upgrades saved per car. Driving should be fun, not realistic.
 
-> **Work in progress.** Single-player only for now.
+Successor to my older mod VNitro, rebuilt from scratch.
 
 ## Features
 
-- **Nitro:** hold Left Shift while driving for a strong forward boost.
+- **Nitro** - hold Left Shift to boost. Blue exhaust flames, an FOV kick, and a tank that drains and refills.
+- **Racing speedometer** - a round gauge with a needle and a curved nitro bar. Unlike the stock one it doesn't freeze at high speed.
+- **Tuning garage** - press F4 in the driver's seat. NFS-style menu with an orbit camera, before/after stat bars and sounds.
+- **Five upgrade categories**, each with Stock / Street / Sport / Race tiers:
+  - Engine: acceleration and top speed
+  - Tires: traction and cornering grip
+  - Suspension: stiffer springs and more downforce
+  - Brakes: stopping power
+  - Nitro: bigger tank, faster refill, harder boost
+- **Upgrades are saved per car** with your save game.
+- mph by default, switch to km/h in the garage.
 
-## Planned
+Upgrades are free for now. Prices may come in a later update.
 
-- Nitro meter with a UI bar, FOV kick and exhaust effects
-- Engine, tire, suspension and brake upgrade tiers
-- A tuning menu where upgrades cost in-game cash
-- Upgrades saved per car
+## Controls
+
+| Key | Action |
+|---|---|
+| Left Shift | Nitro |
+| F4 | Open / close the garage (stop the car first) |
+| W/S or ↑/↓ | Choose a part |
+| A/D or ←/→ | Choose a tier |
+| Enter / Space | Install |
+| U | Switch mph / km/h |
+| Esc | Close the garage |
+
+## Requirements
+
+- Schedule I on the **alternate (Mono)** beta branch. Right-click the game in Steam > Properties > Betas. It won't load on the default IL2CPP branch.
+- [MelonLoader](https://github.com/LavaGang/MelonLoader.Installer/releases/latest) 0.7.3
 
 ## Install
 
-1. Switch Schedule I to the **alternate** (Mono) beta branch: right-click the game in Steam → Properties → Betas. The mod is built for the Mono version and won't load on the default IL2CPP branch.
-2. Install [MelonLoader](https://github.com/LavaGang/MelonLoader.Installer/releases/latest) **0.7.3** and launch the game once.
-3. Drop `SokudoTuners.dll` into `Schedule I\Mods`.
+With r2modman or the Thunderstore app, just install it.
+
+Manually: put `SokudoTuners.dll` in `Schedule I\Mods`.
+
+## Notes
+
+- Built and tested in single player.
+- Upgrades are saved in `SokudoTuners.txt` inside your save folder, so removing the mod never breaks a save.
+- Settings are in `UserData\MelonPreferences.cfg` under `[SokudoTuners]`. Turn on `DebugLogging` for 0-60 / 60-0 times in the console.
 
 ## Building from source
 
-Needs the .NET SDK (any recent version) and the game installed with MelonLoader.
+Needs the .NET SDK and the game installed with MelonLoader.
 
 ```powershell
-.\build.ps1
+.\build.ps1             # builds and copies the DLL into the game's Mods folder
+.\package.ps1           # Release build + Thunderstore zip in dist\
 ```
 
-This builds the DLL and copies it straight into the game's `Mods` folder. If your game isn't at `F:\SteamLibrary\steamapps\common\Schedule I`, either change `GamePath` in `SokudoTuners.csproj` or pass it in:
-
-```powershell
-dotnet build -p:GamePath="C:\Path\To\Schedule I"
-```
+If the game isn't at `F:\SteamLibrary\steamapps\common\Schedule I`, change `GamePath` in `SokudoTuners.csproj` or pass `-p:GamePath="..."`.

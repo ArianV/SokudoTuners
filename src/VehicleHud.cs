@@ -150,7 +150,7 @@ namespace SokudoTuners
             AddText(root, font, imperial ? "MPH" : "KM/H", 14f, new Vector2(0f, -70f), new Vector2(80f, 18f),
                 new Color(1f, 1f, 1f, 0.7f));
 
-            Melon<SokudoTunersMod>.Logger.Msg($"Speedometer built ({(imperial ? "mph" : "km/h")}, dial to {_dialMax}).");
+            ModSettings.LogDebug($"Speedometer built ({(imperial ? "mph" : "km/h")}, dial to {_dialMax}).");
             return true;
         }
 

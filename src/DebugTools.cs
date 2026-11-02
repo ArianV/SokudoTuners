@@ -50,7 +50,7 @@ namespace SokudoTuners
             if (speed >= TimerTarget)
             {
                 string nitro = NitroTank.IsBoosting ? ", with nitro" : "";
-                Melon<SokudoTunersMod>.Logger.Msg(
+                ModSettings.LogDebug(
                     $"0-{TimerTarget:0} {ModSettings.SpeedUnit} in {Time.time - _accelStart:F2}s ({TierSummary(vehicle)}{nitro})");
                 _accelStart = -1f;
             }
@@ -80,7 +80,7 @@ namespace SokudoTuners
             {
                 float meters = Vector3.Distance(_brakeStartPosition, vehicle.transform.position);
                 string distance = ModSettings.UseMph ? $"{meters * 3.28084f:F0} ft" : $"{meters:F1} m";
-                Melon<SokudoTunersMod>.Logger.Msg(
+                ModSettings.LogDebug(
                     $"{TimerTarget:0}-0 {ModSettings.SpeedUnit} in {Time.time - _brakeStart:F2}s over {distance} ({TierSummary(vehicle)})");
                 _brakeStart = -1f;
                 return;

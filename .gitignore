@@ -4,6 +4,7 @@ lib/
 
 bin/
 obj/
+dist/
 *.user
 *.suo
 

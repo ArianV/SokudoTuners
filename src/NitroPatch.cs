@@ -54,13 +54,13 @@ namespace SokudoTuners
                 foreach (Keyframe k in torque.keys)
                     torqueKeys += $"({k.time:F0} km/h -> {k.value:F0}) ";
 
-            Melon<SokudoTunersMod>.Logger.Msg(
+            ModSettings.LogDebug(
                 $"Driving '{vehicle.VehicleName}': mass {vehicle.Rb.mass:F0} kg, " +
                 $"diffGearing {t.Field("diffGearing").GetValue<float>()}, " +
                 $"handBrakeForce {t.Field("handBrakeForce").GetValue<float>()}, " +
                 $"downforce {t.Field("downforce").GetValue<float>()}, " +
                 $"maxSteer {t.Field("maxSteeringAngle").GetValue<float>()}");
-            Melon<SokudoTunersMod>.Logger.Msg($"  torque curve: {torqueKeys}");
+            ModSettings.LogDebug($"  torque curve: {torqueKeys}");
         }
     }
 }
