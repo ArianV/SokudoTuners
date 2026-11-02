@@ -6,7 +6,7 @@ using ScheduleOne.Vehicles;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace CarTuning
+namespace SokudoTuners
 {
     // Runs right after the game's own physics step for every car. The game sets wheel torque in
     // FixedUpdate, so this is where I stack the nitro push on top of it.
@@ -40,7 +40,7 @@ namespace CarTuning
             // Only log when the state flips, otherwise this would spam 50 lines a second.
             if (boosting != _wasBoosting)
             {
-                Melon<CarTuningMod>.Logger.Msg(boosting
+                Melon<SokudoTunersMod>.Logger.Msg(boosting
                     ? $"NITRO ON  at {__instance.Speed_Kmh:F0} km/h"
                     : $"NITRO OFF at {__instance.Speed_Kmh:F0} km/h");
                 _wasBoosting = boosting;
@@ -72,13 +72,13 @@ namespace CarTuning
                 foreach (Keyframe k in torque.keys)
                     torqueKeys += $"({k.time:F0} km/h -> {k.value:F0}) ";
 
-            Melon<CarTuningMod>.Logger.Msg(
+            Melon<SokudoTunersMod>.Logger.Msg(
                 $"Driving '{vehicle.VehicleName}': mass {vehicle.Rb.mass:F0} kg, " +
                 $"diffGearing {t.Field("diffGearing").GetValue<float>()}, " +
                 $"handBrakeForce {t.Field("handBrakeForce").GetValue<float>()}, " +
                 $"downforce {t.Field("downforce").GetValue<float>()}, " +
                 $"maxSteer {t.Field("maxSteeringAngle").GetValue<float>()}");
-            Melon<CarTuningMod>.Logger.Msg($"  torque curve: {torqueKeys}");
+            Melon<SokudoTunersMod>.Logger.Msg($"  torque curve: {torqueKeys}");
         }
     }
 }

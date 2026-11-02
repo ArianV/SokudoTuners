@@ -1,9 +1,9 @@
-# Builds the mod. The csproj copies CarTuning.dll into the game's Mods folder after every build.
+# Builds the mod. The csproj copies SokudoTuners.dll into the game's Mods folder after every build.
 # Usage: .\build.ps1            (Debug)
 #        .\build.ps1 Release
 param([string]$Configuration = "Debug")
 
-dotnet build "$PSScriptRoot\CarTuning.csproj" -c $Configuration
+dotnet build "$PSScriptRoot\SokudoTuners.csproj" -c $Configuration
 $code = $LASTEXITCODE
 
 # MelonLoader reads mods into memory at startup, so the copy works with the game open,

@@ -3,8 +3,8 @@
   <PropertyGroup>
     <!-- Schedule I's Mono runtime is .NET Framework 4.x, so I target net472 to match it. -->
     <TargetFramework>net472</TargetFramework>
-    <AssemblyName>CarTuning</AssemblyName>
-    <RootNamespace>CarTuning</RootNamespace>
+    <AssemblyName>SokudoTuners</AssemblyName>
+    <RootNamespace>SokudoTuners</RootNamespace>
     <Version>0.1.0</Version>
     <LangVersion>latest</LangVersion>
 

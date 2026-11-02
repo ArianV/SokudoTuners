@@ -1,15 +1,15 @@
 using MelonLoader;
 
-[assembly: MelonInfo(typeof(CarTuning.CarTuningMod), "Car Tuning", "0.1.0", "Arian Vahdat")]
+[assembly: MelonInfo(typeof(SokudoTuners.SokudoTunersMod), "Sokudo Tuners", "0.1.0", "Arian Vahdat")]
 [assembly: MelonGame("TVGS", "Schedule I")]
 
-namespace CarTuning
+namespace SokudoTuners
 {
-    public class CarTuningMod : MelonMod
+    public class SokudoTunersMod : MelonMod
     {
         public override void OnInitializeMelon()
         {
-            LoggerInstance.Msg("Car Tuning loaded.");
+            LoggerInstance.Msg("Sokudo Tuners loaded.");
         }
 
         // Logging scene changes for now so I can see when the actual game world (not the menu) is up.
