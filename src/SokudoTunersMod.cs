@@ -23,6 +23,7 @@ namespace SokudoTuners
         {
             TuningMenu.Update();
             VehicleHud.Update();
+            NitroButton.Update();
             NitroFlames.Update();
             DebugTools.Update();
         }

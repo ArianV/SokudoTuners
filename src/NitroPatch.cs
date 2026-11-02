@@ -21,6 +21,12 @@ namespace SokudoTuners
 
             LogVehicleStatsOnce(__instance);
 
+            if (!Upgrades.HasNitro(__instance))
+            {
+                NitroTank.Cancel();
+                return;
+            }
+
             // No push and no fuel burn at the cap.
             bool wantsBoost = IsNitroHeld() && __instance.Speed_Kmh < Upgrades.NitroMaxSpeedKmh(__instance);
 

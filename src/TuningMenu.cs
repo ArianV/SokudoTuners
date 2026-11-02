@@ -256,7 +256,7 @@ namespace SokudoTuners
             _installFlash = 1f;
             MenuSounds.Install();
             Melon<SokudoTunersMod>.Logger.Msg(
-                $"Installed {Upgrades.TierName(_preview)} {type} on '{_vehicle.VehicleName}' ({Upgrades.Describe(type, _preview)})");
+                $"Installed {Upgrades.TierName(type, _preview)} {type} on '{_vehicle.VehicleName}' ({Upgrades.Describe(type, _preview)})");
             Refresh();
         }
 
@@ -281,18 +281,23 @@ namespace SokudoTuners
 
             _categoryTitle.text = type.ToString().ToUpperInvariant();
             _categoryBlurb.text = CategoryBlurbs[_selected];
-            _tierName.text = Upgrades.TierName(_preview).ToUpperInvariant();
+            _tierName.text = Upgrades.TierName(type, _preview).ToUpperInvariant();
             _tierName.color = _preview == current ? Cyan : Pink;
 
             if (_preview == current)
-                _tierState.text = "INSTALLED";
+                _tierState.text = _preview == 0 && type == UpgradeType.Nitro ? "NOT INSTALLED" : "INSTALLED";
             else
-                _tierState.text = $"{Upgrades.TierName(current).ToUpperInvariant()}  >  {Upgrades.TierName(_preview).ToUpperInvariant()}";
+                _tierState.text = $"{Upgrades.TierName(type, current).ToUpperInvariant()}  >  {Upgrades.TierName(type, _preview).ToUpperInvariant()}";
 
             for (int t = 0; t <= Upgrades.MaxTier; t++)
             {
+                _tierPipLabels[t].text = Upgrades.TierName(type, t).ToUpperInvariant();
+
                 Color color;
-                if (t <= Mathf.Min(current, _preview))
+                // "None" isn't something you own, so it never lights up.
+                if (t == 0 && type == UpgradeType.Nitro)
+                    color = Empty;
+                else if (t <= Mathf.Min(current, _preview))
                     color = Cyan;
                 else if (t <= _preview)
                     color = Pink;
@@ -321,8 +326,13 @@ namespace SokudoTuners
                 bool gain = after[s].Value >= before[s].Value;
                 row.ChangeImage.color = gain ? Pink : Downgrade;
 
-                float percent = (after[s].Value / before[s].Value - 1f) * 100f;
-                row.Delta.text = Mathf.Abs(percent) < 0.5f ? "" : $"{(percent > 0f ? "+" : "")}{percent:0}%";
+                if (before[s].Value <= 0f)
+                    row.Delta.text = after[s].Value > 0f ? "NEW" : "";
+                else
+                {
+                    float percent = (after[s].Value / before[s].Value - 1f) * 100f;
+                    row.Delta.text = Mathf.Abs(percent) < 0.5f ? "" : $"{(percent > 0f ? "+" : "")}{percent:0}%";
+                }
                 row.Delta.color = gain ? Pink : Downgrade;
             }
 
@@ -490,7 +500,7 @@ namespace SokudoTuners
                 _tierPips[t].raycastTarget = true;
                 int tier = t;
                 MakeButton(_tierPips[t].gameObject, () => SetPreview(tier));
-                _tierPipLabels[t] = AddText(_content, Upgrades.TierName(t).ToUpperInvariant(), 14f,
+                _tierPipLabels[t] = AddText(_content, "", 14f,
                     position + new Vector2(2f, -14f), new Vector2(112f, 20f), Dim);
             }
 

@@ -28,6 +28,7 @@ namespace SokudoTuners
         public const int MaxTier = 3;
 
         private static readonly string[] TierNames = { "Stock", "Street", "Sport", "Race" };
+        private static readonly string[] NitroTierNames = { "None", "Street", "Sport", "Race" };
 
         private static readonly float[] EngineTorque = { 1f, 1.3f, 1.65f, 2.1f };
 
@@ -42,11 +43,11 @@ namespace SokudoTuners
         // Too much and the wheels just lock.
         private static readonly float[] BrakeTorque = { 1f, 1.3f, 1.6f, 2f };
 
-        // The speed cap is physics km/h. Wheel colliders get jittery much past this.
-        private static readonly float[] NitroTank = { 5f, 6.5f, 8f, 10f };
-        private static readonly float[] NitroRefill = { 12f, 10f, 8f, 6f };
-        private static readonly float[] NitroPush = { 18f, 21f, 25f, 30f };
-        private static readonly float[] NitroSpeedCap = { 230f, 240f, 250f, 260f };
+        // Nitro tier 0 means no kit installed. The speed cap is physics km/h, wheel colliders get jittery much past this.
+        private static readonly float[] NitroTank = { 0f, 5f, 7f, 10f };
+        private static readonly float[] NitroRefill = { 0f, 12f, 9f, 6f };
+        private static readonly float[] NitroPush = { 0f, 18f, 23f, 30f };
+        private static readonly float[] NitroSpeedCap = { 0f, 230f, 245f, 260f };
 
         private static readonly Dictionary<Guid, int[]> _tiers = new Dictionary<Guid, int[]>();
 
@@ -120,7 +121,9 @@ namespace SokudoTuners
             TierChanged?.Invoke(vehicle, type);
         }
 
-        public static string TierName(int tier) => TierNames[tier];
+        public static string TierName(UpgradeType type, int tier) => type == UpgradeType.Nitro ? NitroTierNames[tier] : TierNames[tier];
+
+        public static bool HasNitro(LandVehicle vehicle) => GetTier(vehicle, UpgradeType.Nitro) > 0;
 
         public static float EngineTorqueMultiplier(LandVehicle vehicle) => EngineTorque[GetTier(vehicle, UpgradeType.Engine)];
         public static float TireForwardGripMultiplier(LandVehicle vehicle) => TireForwardGrip[GetTier(vehicle, UpgradeType.Tires)];
@@ -151,7 +154,7 @@ namespace SokudoTuners
                     return new[]
                     {
                         Stat("CAPACITY", NitroTank, tier),
-                        new UpgradeStat { Label = "REFILL", Value = NitroRefill[MaxTier] / NitroRefill[tier] },
+                        new UpgradeStat { Label = "REFILL", Value = tier == 0 ? 0f : NitroRefill[MaxTier] / NitroRefill[tier] },
                         Stat("BOOST", NitroPush, tier)
                     };
                 default:
@@ -172,7 +175,8 @@ namespace SokudoTuners
                 case UpgradeType.Tires: return $"x{TireForwardGrip[tier]} traction, x{TireSideGrip[tier]} cornering grip";
                 case UpgradeType.Suspension: return $"x{SuspensionSpring[tier]} springs, x{SuspensionDamper[tier]} dampers, x{SuspensionDownforce[tier]} downforce";
                 case UpgradeType.Brakes: return $"x{BrakeTorque[tier]} brake force";
-                case UpgradeType.Nitro: return $"{NitroTank[tier]}s tank, {NitroRefill[tier]}s refill, {NitroPush[tier]} m/s² push";
+                case UpgradeType.Nitro:
+                    return tier == 0 ? "No nitro kit installed" : $"{NitroTank[tier]}s tank, {NitroRefill[tier]}s refill, {NitroPush[tier]} m/s² push";
                 default: return "not built yet";
             }
         }

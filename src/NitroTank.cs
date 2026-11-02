@@ -14,6 +14,11 @@ namespace SokudoTuners
 
         private static float _timeSinceBoost;
 
+        public static void Cancel()
+        {
+            IsBoosting = false;
+        }
+
         public static bool Tick(bool wantsBoost, float deltaTime, float fullTankSeconds, float refillSeconds)
         {
             if (!wantsBoost || Fuel <= 0f)

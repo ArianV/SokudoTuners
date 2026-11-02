@@ -42,6 +42,7 @@ namespace SokudoTuners
         private static RectTransform _needle;
         private static Image _speedArc;
         private static Image _nitroFill;
+        private static GameObject _nitroGroup;
         private static TextMeshProUGUI _speedNumber;
         private static float _shownSpeed;
 
@@ -73,6 +74,11 @@ namespace SokudoTuners
             _speedArc.fillAmount = DialSweep / 360f * t;
             _speedArc.color = NitroTank.IsBoosting ? NitroBoostColor : SpeedArcColor;
             _speedNumber.text = Mathf.RoundToInt(_shownSpeed).ToString();
+
+            bool hasNitro = Upgrades.HasNitro(vehicle);
+            _nitroGroup.SetActive(hasNitro);
+            if (!hasNitro)
+                return;
 
             _nitroFill.fillAmount = NitroSweep / 360f * NitroTank.Fuel;
             if (NitroTank.IsBoosting)
@@ -112,10 +118,17 @@ namespace SokudoTuners
 
             float radius = DialSize / 2f;
 
+            RectTransform nitro = (RectTransform)new GameObject("Nitro", typeof(RectTransform)).transform;
+            nitro.SetParent(root, false);
+            nitro.anchorMin = Vector2.zero;
+            nitro.anchorMax = Vector2.one;
+            nitro.offsetMin = nitro.offsetMax = Vector2.zero;
+            _nitroGroup = nitro.gameObject;
+
             float nitroSize = DialSize + 44f;
-            AddArc(root, _arcRingSprite, nitroSize, NitroStartAngle, NitroSweep / 360f, NitroTrackColor);
-            _nitroFill = AddArc(root, _arcRingSprite, nitroSize, NitroStartAngle, 0f, NitroReadyColor);
-            AddText(root, font, "NITRO", 12f, PointOnCircle(NitroStartAngle + 12f, radius + 26f),
+            AddArc(nitro, _arcRingSprite, nitroSize, NitroStartAngle, NitroSweep / 360f, NitroTrackColor);
+            _nitroFill = AddArc(nitro, _arcRingSprite, nitroSize, NitroStartAngle, 0f, NitroReadyColor);
+            AddText(nitro, font, "NITRO", 12f, PointOnCircle(NitroStartAngle + 12f, radius + 26f),
                 new Vector2(60f, 16f), NitroReadyColor);
 
             AddImage(root, _discSprite, Vector2.zero, new Vector2(DialSize, DialSize), DialColor);

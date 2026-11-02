@@ -8,7 +8,7 @@ Successor to my older mod VNitro, rebuilt from scratch.
 
 ## Features
 
-- **Nitro** - hold Left Shift to boost. Blue exhaust flames, an FOV kick, and a tank that drains and refills.
+- **Nitro** - install a nitro kit in the garage, then hold Left Shift to boost. Blue exhaust flames, an FOV kick, a tank that drains and refills, and a Shift prompt that lights up while it fires.
 - **Racing speedometer** - a round gauge with a needle and a curved nitro bar. Unlike the stock one it doesn't freeze at high speed.
 - **Tuning garage** - press F4 in the driver's seat. NFS-style menu with an orbit camera, before/after stat bars and sounds.
 - **Five upgrade categories**, each with Stock / Street / Sport / Race tiers:
@@ -16,7 +16,7 @@ Successor to my older mod VNitro, rebuilt from scratch.
   - Tires: traction and cornering grip
   - Suspension: stiffer springs and more downforce
   - Brakes: stopping power
-  - Nitro: bigger tank, faster refill, harder boost
+  - Nitro: None / Street / Sport / Race. Cars start without nitro.
 - **Upgrades are saved per car** with your save game.
 - mph by default, switch to km/h in the garage.
 
@@ -26,7 +26,7 @@ Upgrades are free for now. Prices may come in a later update.
 
 | Key | Action |
 |---|---|
-| Left Shift | Nitro |
+| Left Shift | Nitro (once a kit is installed) |
 | F4 | Open / close the garage (stop the car first) |
 | W/S or ↑/↓ | Choose a part |
 | A/D or ←/→ | Choose a tier |
