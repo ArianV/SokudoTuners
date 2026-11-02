@@ -1,6 +1,5 @@
 using MelonLoader;
 using ScheduleOne.DevUtilities;
-using ScheduleOne.PlayerScripts;
 using ScheduleOne.UI;
 using ScheduleOne.Vehicles;
 using TMPro;
@@ -72,7 +71,8 @@ namespace SokudoTuners
             if (_root == null && !TryBuild(imperial))
                 return;
 
-            LandVehicle vehicle = GetDrivenVehicle();
+            // Passengers see the vehicle HUD too, but the gauge is only for the driver.
+            LandVehicle vehicle = LocalDriver.GetVehicle();
             _root.SetActive(vehicle != null);
             if (vehicle == null)
                 return;
@@ -100,16 +100,6 @@ namespace SokudoTuners
                 _nitroFill.color = NitroLowColor;
             else
                 _nitroFill.color = NitroReadyColor;
-        }
-
-        // Passengers see the vehicle HUD too, but the gauge is only for the driver.
-        private static LandVehicle GetDrivenVehicle()
-        {
-            if (Player.Local == null || Player.Local.CurrentVehicle == null)
-                return null;
-
-            LandVehicle vehicle = Player.Local.CurrentVehicle.GetComponent<LandVehicle>();
-            return vehicle != null && vehicle.LocalPlayerIsDriver ? vehicle : null;
         }
 
         private static bool IsImperial()

@@ -21,6 +21,7 @@ namespace SokudoTuners
         public override void OnUpdate()
         {
             VehicleHud.Update();
+            NitroFlames.Update();
         }
     }
 }
