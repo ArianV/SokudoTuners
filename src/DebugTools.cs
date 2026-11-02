@@ -8,11 +8,11 @@ namespace SokudoTuners
 {
     // Testing helpers while I balance the upgrades. The tuning menu replaces the hotkeys later.
     //   F5  cycle the engine tier of the car I'm driving
-    // Plus an automatic 0-100 km/h timer in the console, so tiers can be compared with numbers, not feel.
+    // Plus an automatic 0-60 mph (or 0-100 km/h) timer in the console, so tiers can be compared with numbers, not feel.
     public static class DebugTools
     {
-        // On the game's speedometer scale, so it matches what the HUD shows.
-        private const float TimerTargetKmh = 100f;
+        // On the HUD's speed scale, in whichever unit the HUD is showing.
+        private static float TimerTarget => ModSettings.UseMph ? 60f : 100f;
 
         private static float _timerStart = -1f;
 
@@ -47,10 +47,10 @@ namespace SokudoTuners
                 $"{type} on '{vehicle.VehicleName}' is now {Upgrades.TierName(tier)} ({Upgrades.Describe(type, tier)})");
         }
 
-        // Starts when I pull away from a standstill and stops at 100. Lifting off or stopping cancels it.
+        // Starts when I pull away from a standstill and stops at the target. Lifting off or stopping cancels it.
         private static void UpdateAccelerationTimer(LandVehicle vehicle)
         {
-            float speed = vehicle.Rb.velocity.magnitude * 1.4f * 3.6f;
+            float speed = ModSettings.DisplaySpeed(vehicle.Rb.velocity.magnitude);
 
             if (speed < 1f)
             {
@@ -67,11 +67,11 @@ namespace SokudoTuners
                 return;
             }
 
-            if (speed >= TimerTargetKmh)
+            if (speed >= TimerTarget)
             {
                 string nitro = NitroTank.IsBoosting ? ", with nitro" : "";
                 Melon<SokudoTunersMod>.Logger.Msg(
-                    $"0-{TimerTargetKmh:0} km/h in {Time.time - _timerStart:F2}s " +
+                    $"0-{TimerTarget:0} {ModSettings.SpeedUnit} in {Time.time - _timerStart:F2}s " +
                     $"(engine {Upgrades.TierName(Upgrades.GetTier(vehicle, UpgradeType.Engine))}{nitro})");
                 _timerStart = -1f;
             }

@@ -9,6 +9,7 @@ namespace SokudoTuners
     {
         public override void OnInitializeMelon()
         {
+            ModSettings.Init();
             LoggerInstance.Msg("Sokudo Tuners loaded.");
         }
 

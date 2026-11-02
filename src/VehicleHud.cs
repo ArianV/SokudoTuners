@@ -29,10 +29,6 @@ namespace SokudoTuners
         private const float NitroStartAngle = 240f;
         private const float NitroSweep = 120f;
 
-        // The game shows speed at 1.4x the real physics speed (LandVehicle.SPEED_DISPLAY_MULTIPLIER).
-        // I match it so my numbers agree with the rest of the game.
-        private const float GameSpeedMultiplier = 1.4f;
-
         private static readonly Color DialColor = new Color(0.04f, 0.04f, 0.06f, 0.78f);
         private static readonly Color TrackColor = new Color(1f, 1f, 1f, 0.12f);
         private static readonly Color SpeedArcColor = new Color(1f, 1f, 1f, 0.85f);
@@ -60,7 +56,7 @@ namespace SokudoTuners
         // Called every frame from the mod.
         public static void Update()
         {
-            bool imperial = IsImperial();
+            bool imperial = ModSettings.UseMph;
 
             // Rebuild if the unit setting changed, so the dial numbers match.
             if (_root != null && imperial != _builtImperial)
@@ -81,8 +77,7 @@ namespace SokudoTuners
             if (_gameSpeedText != null)
                 _gameSpeedText.enabled = false;
 
-            float unitFactor = imperial ? 2.23694f : 3.6f;
-            float speed = vehicle.Rb.velocity.magnitude * GameSpeedMultiplier * unitFactor;
+            float speed = ModSettings.DisplaySpeed(vehicle.Rb.velocity.magnitude);
 
             // Ease the needle towards the real value so it sweeps instead of twitching.
             _shownSpeed = Mathf.Lerp(_shownSpeed, speed, 1f - Mathf.Exp(-12f * Time.deltaTime));
@@ -100,12 +95,6 @@ namespace SokudoTuners
                 _nitroFill.color = NitroLowColor;
             else
                 _nitroFill.color = NitroReadyColor;
-        }
-
-        private static bool IsImperial()
-        {
-            return Singleton<Settings>.InstanceExists &&
-                   Singleton<Settings>.Instance.UnitType == Settings.EUnitType.Imperial;
         }
 
         private static bool TryBuild(bool imperial)
