@@ -34,6 +34,11 @@
     <Reference Include="UnityEngine.InputLegacyModule" HintPath="$(ManagedPath)\UnityEngine.InputLegacyModule.dll" Private="false" />
     <!-- The game reads keys through Unity's new Input System, so I do the same. -->
     <Reference Include="Unity.InputSystem" HintPath="$(ManagedPath)\Unity.InputSystem.dll" Private="false" />
+    <!-- UI: the game's HUD is Unity UI (uGUI) with TextMeshPro text, so the nitro bar uses the same. -->
+    <Reference Include="UnityEngine.UI" HintPath="$(ManagedPath)\UnityEngine.UI.dll" Private="false" />
+    <Reference Include="UnityEngine.UIModule" HintPath="$(ManagedPath)\UnityEngine.UIModule.dll" Private="false" />
+    <Reference Include="UnityEngine.TextRenderingModule" HintPath="$(ManagedPath)\UnityEngine.TextRenderingModule.dll" Private="false" />
+    <Reference Include="Unity.TextMeshPro" HintPath="$(ManagedPath)\Unity.TextMeshPro.dll" Private="false" />
   </ItemGroup>
 
   <!-- After every build, drop the DLL straight into the game's Mods folder so I can just launch and test. -->

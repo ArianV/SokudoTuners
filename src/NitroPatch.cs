@@ -21,7 +21,6 @@ namespace SokudoTuners
         // Past this I stop pushing. Unity's wheel physics gets jittery at silly speeds.
         private const float NitroMaxSpeedKmh = 230f;
 
-        private static bool _wasBoosting;
         private static readonly HashSet<int> _loggedVehicles = new HashSet<int>();
 
         private static void Postfix(LandVehicle __instance)
@@ -32,19 +31,11 @@ namespace SokudoTuners
 
             LogVehicleStatsOnce(__instance);
 
-            bool boosting = IsNitroHeld() && __instance.Speed_Kmh < NitroMaxSpeedKmh;
+            // At the speed cap I stop pushing and stop burning fuel, so holding Shift there isn't wasted.
+            bool wantsBoost = IsNitroHeld() && __instance.Speed_Kmh < NitroMaxSpeedKmh;
 
-            if (boosting)
+            if (NitroTank.Tick(wantsBoost, Time.fixedDeltaTime))
                 __instance.Rb.AddForce(__instance.transform.forward * NitroAcceleration, ForceMode.Acceleration);
-
-            // Only log when the state flips, otherwise this would spam 50 lines a second.
-            if (boosting != _wasBoosting)
-            {
-                Melon<SokudoTunersMod>.Logger.Msg(boosting
-                    ? $"NITRO ON  at {__instance.Speed_Kmh:F0} km/h"
-                    : $"NITRO OFF at {__instance.Speed_Kmh:F0} km/h");
-                _wasBoosting = boosting;
-            }
         }
 
         private static bool IsNitroHeld()

@@ -17,5 +17,10 @@ namespace SokudoTuners
         {
             LoggerInstance.Msg($"Scene loaded: {sceneName} ({buildIndex})");
         }
+
+        public override void OnUpdate()
+        {
+            NitroHud.Update();
+        }
     }
 }
