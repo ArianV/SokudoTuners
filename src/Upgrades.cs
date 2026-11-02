@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using ScheduleOne.Vehicles;
 
 namespace SokudoTuners
@@ -64,6 +66,60 @@ namespace SokudoTuners
         public static int GetTier(LandVehicle vehicle, UpgradeType type)
         {
             return _tiers.TryGetValue(vehicle.GUID, out int[] tiers) ? tiers[(int)type] : 0;
+        }
+
+        public static void Clear()
+        {
+            _tiers.Clear();
+        }
+
+        // The save file is plain text so it's easy to read and fix by hand:
+        //   <car GUID>=<engine>,<tires>,<suspension>,<brakes>,<nitro>
+        // Only cars with at least one upgrade are written.
+        public static string Serialize()
+        {
+            StringBuilder text = new StringBuilder();
+            text.AppendLine("# Sokudo Tuners upgrades. One car per line: GUID=engine,tires,suspension,brakes,nitro (0 stock - 3 race)");
+            foreach (KeyValuePair<Guid, int[]> car in _tiers)
+            {
+                if (car.Value.All(tier => tier == 0))
+                    continue;
+                text.AppendLine($"{car.Key}={string.Join(",", car.Value.Select(tier => tier.ToString()).ToArray())}");
+            }
+            return text.ToString();
+        }
+
+        // Returns how many cars it read. Lines it can't make sense of are skipped rather than failing the whole
+        // load, and a file from a future version with more categories still loads the ones I know about.
+        public static int Deserialize(string text)
+        {
+            int count = 0;
+            int categories = Enum.GetValues(typeof(UpgradeType)).Length;
+
+            foreach (string rawLine in text.Split('\n'))
+            {
+                string line = rawLine.Trim();
+                if (line.Length == 0 || line.StartsWith("#"))
+                    continue;
+
+                string[] parts = line.Split('=');
+                if (parts.Length != 2)
+                    continue;
+
+                Guid guid;
+                try { guid = new Guid(parts[0].Trim()); }
+                catch (FormatException) { continue; }
+
+                string[] values = parts[1].Split(',');
+                int[] tiers = new int[categories];
+                for (int i = 0; i < categories && i < values.Length; i++)
+                    if (int.TryParse(values[i].Trim(), out int tier))
+                        tiers[i] = Math.Max(0, Math.Min(MaxTier, tier));
+
+                _tiers[guid] = tiers;
+                count++;
+            }
+            return count;
         }
 
         public static void SetTier(LandVehicle vehicle, UpgradeType type, int tier)

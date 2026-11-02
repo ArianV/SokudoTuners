@@ -18,6 +18,7 @@ namespace SokudoTuners
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
         {
             LoggerInstance.Msg($"Scene loaded: {sceneName} ({buildIndex})");
+            UpgradeSaves.SubscribeToLoads();
         }
 
         public override void OnUpdate()
