@@ -9,13 +9,18 @@ namespace SokudoTuners
     // Testing helpers while I balance the upgrades. The tuning menu replaces the hotkeys later.
     //   F5  cycle the engine tier of the car I'm driving
     //   F6  cycle the tire tier
-    // Plus an automatic 0-60 mph (or 0-100 km/h) timer in the console, so tiers can be compared with numbers, not feel.
+    //   F7  cycle the suspension tier
+    //   F8  cycle the brake tier
+    // Plus automatic 0-60 and 60-0 timers in the console (0-100 / 100-0 in km/h), so tiers can be compared
+    // with numbers, not feel.
     public static class DebugTools
     {
         // On the HUD's speed scale, in whichever unit the HUD is showing.
         private static float TimerTarget => ModSettings.UseMph ? 60f : 100f;
 
-        private static float _timerStart = -1f;
+        private static float _accelStart = -1f;
+        private static float _brakeStart = -1f;
+        private static Vector3 _brakeStartPosition;
 
         // Called every frame from the mod.
         public static void Update()
@@ -23,12 +28,16 @@ namespace SokudoTuners
             LandVehicle vehicle = LocalDriver.GetVehicle();
             if (vehicle == null)
             {
-                _timerStart = -1f;
+                _accelStart = -1f;
+                _brakeStart = -1f;
                 return;
             }
 
             HandleHotkeys(vehicle);
-            UpdateAccelerationTimer(vehicle);
+
+            float speed = ModSettings.DisplaySpeed(vehicle.Rb.velocity.magnitude);
+            UpdateAccelerationTimer(vehicle, speed);
+            UpdateBrakingTimer(vehicle, speed);
         }
 
         private static void HandleHotkeys(LandVehicle vehicle)
@@ -41,6 +50,10 @@ namespace SokudoTuners
                 Cycle(vehicle, UpgradeType.Engine);
             if (keyboard.f6Key.wasPressedThisFrame)
                 Cycle(vehicle, UpgradeType.Tires);
+            if (keyboard.f7Key.wasPressedThisFrame)
+                Cycle(vehicle, UpgradeType.Suspension);
+            if (keyboard.f8Key.wasPressedThisFrame)
+                Cycle(vehicle, UpgradeType.Brakes);
         }
 
         private static void Cycle(LandVehicle vehicle, UpgradeType type)
@@ -51,22 +64,20 @@ namespace SokudoTuners
         }
 
         // Starts when I pull away from a standstill and stops at the target. Lifting off or stopping cancels it.
-        private static void UpdateAccelerationTimer(LandVehicle vehicle)
+        private static void UpdateAccelerationTimer(LandVehicle vehicle, float speed)
         {
-            float speed = ModSettings.DisplaySpeed(vehicle.Rb.velocity.magnitude);
-
             if (speed < 1f)
             {
-                _timerStart = vehicle.currentThrottle > 0f ? Time.time : -1f;
+                _accelStart = vehicle.currentThrottle > 0f ? Time.time : -1f;
                 return;
             }
 
-            if (_timerStart < 0f)
+            if (_accelStart < 0f)
                 return;
 
             if (vehicle.currentThrottle <= 0f)
             {
-                _timerStart = -1f;
+                _accelStart = -1f;
                 return;
             }
 
@@ -74,11 +85,52 @@ namespace SokudoTuners
             {
                 string nitro = NitroTank.IsBoosting ? ", with nitro" : "";
                 Melon<SokudoTunersMod>.Logger.Msg(
-                    $"0-{TimerTarget:0} {ModSettings.SpeedUnit} in {Time.time - _timerStart:F2}s " +
-                    $"(engine {Upgrades.TierName(Upgrades.GetTier(vehicle, UpgradeType.Engine))}, " +
-                    $"tires {Upgrades.TierName(Upgrades.GetTier(vehicle, UpgradeType.Tires))}{nitro})");
-                _timerStart = -1f;
+                    $"0-{TimerTarget:0} {ModSettings.SpeedUnit} in {Time.time - _accelStart:F2}s ({TierSummary(vehicle)}{nitro})");
+                _accelStart = -1f;
             }
+        }
+
+        // Starts when I hit the brakes (S while rolling forward) at or above the target speed, and stops when the
+        // car does. Letting go of the brake cancels it. The distance is real distance travelled in the world.
+        private static void UpdateBrakingTimer(LandVehicle vehicle, float speed)
+        {
+            bool braking = vehicle.currentThrottle < 0f && vehicle.Speed_Kmh > 0f;
+
+            if (_brakeStart < 0f)
+            {
+                if (braking && speed >= TimerTarget)
+                {
+                    _brakeStart = Time.time;
+                    _brakeStartPosition = vehicle.transform.position;
+                }
+                return;
+            }
+
+            if (speed < 1f)
+            {
+                float meters = Vector3.Distance(_brakeStartPosition, vehicle.transform.position);
+                string distance = ModSettings.UseMph ? $"{meters * 3.28084f:F0} ft" : $"{meters:F1} m";
+                Melon<SokudoTunersMod>.Logger.Msg(
+                    $"{TimerTarget:0}-0 {ModSettings.SpeedUnit} in {Time.time - _brakeStart:F2}s over {distance} ({TierSummary(vehicle)})");
+                _brakeStart = -1f;
+                return;
+            }
+
+            if (!braking)
+                _brakeStart = -1f;
+        }
+
+        private static string TierSummary(LandVehicle vehicle)
+        {
+            return $"engine {Short(vehicle, UpgradeType.Engine)}, tires {Short(vehicle, UpgradeType.Tires)}, " +
+                   $"suspension {Short(vehicle, UpgradeType.Suspension)}, brakes {Short(vehicle, UpgradeType.Brakes)}";
+        }
+
+        // "S" or "T2" keeps the log line short enough to read.
+        private static string Short(LandVehicle vehicle, UpgradeType type)
+        {
+            int tier = Upgrades.GetTier(vehicle, type);
+            return tier == 0 ? "S" : "T" + tier;
         }
     }
 }

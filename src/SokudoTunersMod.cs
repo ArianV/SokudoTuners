@@ -10,6 +10,7 @@ namespace SokudoTuners
         public override void OnInitializeMelon()
         {
             ModSettings.Init();
+            Upgrades.TierChanged += SuspensionTuner.OnTierChanged;
             LoggerInstance.Msg("Sokudo Tuners loaded.");
         }
 
