@@ -1,14 +1,10 @@
 namespace SokudoTuners
 {
     // The nitro fuel. 1 = full, 0 = empty. One shared tank for now, per-car tanks come with saving.
+    // How long a full tank lasts and how fast it refills come from the car's nitro tier, so a bigger tank
+    // just drains the same 0-1 fuel more slowly and the HUD bar needs no changes.
     public static class NitroTank
     {
-        // How long a full tank lasts while holding the button.
-        private const float FullTankSeconds = 5f;
-
-        // How long an empty tank takes to fill back up.
-        private const float RefillSeconds = 12f;
-
         // Wait a moment after boosting before refilling, so feathering Shift doesn't refill it for free.
         private const float RefillDelaySeconds = 1.5f;
 
@@ -22,7 +18,7 @@ namespace SokudoTuners
         private static float _timeSinceBoost;
 
         // Called every physics step while I'm driving. Returns whether nitro should fire this step.
-        public static bool Tick(bool wantsBoost, float deltaTime)
+        public static bool Tick(bool wantsBoost, float deltaTime, float fullTankSeconds, float refillSeconds)
         {
             if (!wantsBoost || Fuel <= 0f)
                 IsBoosting = false;
@@ -31,7 +27,7 @@ namespace SokudoTuners
 
             if (IsBoosting)
             {
-                Fuel -= deltaTime / FullTankSeconds;
+                Fuel -= deltaTime / fullTankSeconds;
                 if (Fuel < 0f) Fuel = 0f;
                 _timeSinceBoost = 0f;
             }
@@ -40,7 +36,7 @@ namespace SokudoTuners
                 _timeSinceBoost += deltaTime;
                 if (_timeSinceBoost >= RefillDelaySeconds)
                 {
-                    Fuel += deltaTime / RefillSeconds;
+                    Fuel += deltaTime / refillSeconds;
                     if (Fuel > 1f) Fuel = 1f;
                 }
             }

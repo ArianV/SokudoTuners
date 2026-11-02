@@ -11,6 +11,7 @@ namespace SokudoTuners
     //   F6  cycle the tire tier
     //   F7  cycle the suspension tier
     //   F8  cycle the brake tier
+    //   F9  cycle the nitro tier
     // Plus automatic 0-60 and 60-0 timers in the console (0-100 / 100-0 in km/h), so tiers can be compared
     // with numbers, not feel.
     public static class DebugTools
@@ -56,6 +57,8 @@ namespace SokudoTuners
                 Cycle(vehicle, UpgradeType.Suspension);
             if (keyboard.f8Key.wasPressedThisFrame)
                 Cycle(vehicle, UpgradeType.Brakes);
+            if (keyboard.f9Key.wasPressedThisFrame)
+                Cycle(vehicle, UpgradeType.Nitro);
         }
 
         private static void Cycle(LandVehicle vehicle, UpgradeType type)
@@ -131,7 +134,8 @@ namespace SokudoTuners
         private static string TierSummary(LandVehicle vehicle)
         {
             return $"engine {Short(vehicle, UpgradeType.Engine)}, tires {Short(vehicle, UpgradeType.Tires)}, " +
-                   $"suspension {Short(vehicle, UpgradeType.Suspension)}, brakes {Short(vehicle, UpgradeType.Brakes)}";
+                   $"suspension {Short(vehicle, UpgradeType.Suspension)}, brakes {Short(vehicle, UpgradeType.Brakes)}, " +
+                   $"nitro {Short(vehicle, UpgradeType.Nitro)}";
         }
 
         // "S" or "T2" keeps the log line short enough to read.

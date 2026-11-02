@@ -40,6 +40,14 @@ namespace SokudoTuners
         // Brake torque multiplier. Kept moderate because too much just locks the wheels and the car skids further.
         private static readonly float[] BrakeTorque = { 1f, 1.3f, 1.6f, 2f };
 
+        // Nitro: a bigger tank, a faster refill and a harder push per tier. 18 m/s² at stock is almost 2g.
+        // The speed cap is real physics km/h (about 200 / 209 / 217 / 226 mph on the HUD). I keep it from
+        // climbing much because Unity's wheel physics gets jittery at silly speeds.
+        private static readonly float[] NitroTank = { 5f, 6.5f, 8f, 10f };
+        private static readonly float[] NitroRefill = { 12f, 10f, 8f, 6f };
+        private static readonly float[] NitroPush = { 18f, 21f, 25f, 30f };
+        private static readonly float[] NitroSpeedCap = { 230f, 240f, 250f, 260f };
+
         // Keyed by the car's save GUID rather than the Unity object, so per-car saving can plug straight in later.
         private static readonly Dictionary<Guid, int[]> _tiers = new Dictionary<Guid, int[]>();
 
@@ -74,6 +82,10 @@ namespace SokudoTuners
         public static float SuspensionDamperMultiplier(LandVehicle vehicle) => SuspensionDamper[GetTier(vehicle, UpgradeType.Suspension)];
         public static float SuspensionDownforceMultiplier(LandVehicle vehicle) => SuspensionDownforce[GetTier(vehicle, UpgradeType.Suspension)];
         public static float BrakeMultiplier(LandVehicle vehicle) => BrakeTorque[GetTier(vehicle, UpgradeType.Brakes)];
+        public static float NitroTankSeconds(LandVehicle vehicle) => NitroTank[GetTier(vehicle, UpgradeType.Nitro)];
+        public static float NitroRefillSeconds(LandVehicle vehicle) => NitroRefill[GetTier(vehicle, UpgradeType.Nitro)];
+        public static float NitroAcceleration(LandVehicle vehicle) => NitroPush[GetTier(vehicle, UpgradeType.Nitro)];
+        public static float NitroMaxSpeedKmh(LandVehicle vehicle) => NitroSpeedCap[GetTier(vehicle, UpgradeType.Nitro)];
 
         // What the tier does, for the log line when it changes.
         public static string Describe(UpgradeType type, int tier)
@@ -84,6 +96,7 @@ namespace SokudoTuners
                 case UpgradeType.Tires: return $"x{TireForwardGrip[tier]} traction, x{TireSideGrip[tier]} cornering grip";
                 case UpgradeType.Suspension: return $"x{SuspensionSpring[tier]} springs, x{SuspensionDamper[tier]} dampers, x{SuspensionDownforce[tier]} downforce";
                 case UpgradeType.Brakes: return $"x{BrakeTorque[tier]} brake force";
+                case UpgradeType.Nitro: return $"{NitroTank[tier]}s tank, {NitroRefill[tier]}s refill, {NitroPush[tier]} m/s² push";
                 default: return "not built yet";
             }
         }

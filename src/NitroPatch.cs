@@ -14,13 +14,6 @@ namespace SokudoTuners
     [HarmonyPatch(typeof(LandVehicle), "FixedUpdate")]
     public static class NitroPatch
     {
-        // Hardcoded for now, these become upgrade tiers later.
-        // ForceMode.Acceleration ignores mass, so every car gets the same kick. 18 m/s² is almost 2g.
-        private const float NitroAcceleration = 18f;
-
-        // Past this I stop pushing. Unity's wheel physics gets jittery at silly speeds.
-        private const float NitroMaxSpeedKmh = 230f;
-
         private static readonly HashSet<int> _loggedVehicles = new HashSet<int>();
 
         private static void Postfix(LandVehicle __instance)
@@ -32,10 +25,14 @@ namespace SokudoTuners
             LogVehicleStatsOnce(__instance);
 
             // At the speed cap I stop pushing and stop burning fuel, so holding Shift there isn't wasted.
-            bool wantsBoost = IsNitroHeld() && __instance.Speed_Kmh < NitroMaxSpeedKmh;
+            bool wantsBoost = IsNitroHeld() && __instance.Speed_Kmh < Upgrades.NitroMaxSpeedKmh(__instance);
 
-            if (NitroTank.Tick(wantsBoost, Time.fixedDeltaTime))
-                __instance.Rb.AddForce(__instance.transform.forward * NitroAcceleration, ForceMode.Acceleration);
+            bool boosting = NitroTank.Tick(wantsBoost, Time.fixedDeltaTime,
+                Upgrades.NitroTankSeconds(__instance), Upgrades.NitroRefillSeconds(__instance));
+
+            // ForceMode.Acceleration ignores mass, so every car gets the same kick.
+            if (boosting)
+                __instance.Rb.AddForce(__instance.transform.forward * Upgrades.NitroAcceleration(__instance), ForceMode.Acceleration);
         }
 
         private static bool IsNitroHeld()

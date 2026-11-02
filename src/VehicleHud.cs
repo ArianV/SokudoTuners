@@ -110,9 +110,9 @@ namespace SokudoTuners
             BuildSprites();
             TMP_FontAsset font = _gameSpeedText.font;
 
-            // Nitro maxes out around 320 km/h (200 mph) on the game's scale, so the dial goes a bit past that.
+            // Tier 3 nitro maxes out around 364 km/h (226 mph) on the game's scale, so the dial goes a bit past that.
             _builtImperial = imperial;
-            _dialMax = imperial ? 220f : 360f;
+            _dialMax = imperial ? 240f : 400f;
             float majorStep = imperial ? 20f : 40f;
             float minorStep = majorStep / 2f;
 
