@@ -2,8 +2,8 @@ using MelonLoader;
 
 namespace SokudoTuners
 {
-    // Player settings, saved by MelonLoader to UserData/MelonPreferences.cfg. The tuning menu will
-    // flip these later, for now they can be edited in that file.
+    // Player settings, saved by MelonLoader to UserData/MelonPreferences.cfg. The tuning menu flips them,
+    // and they can also be edited in that file.
     public static class ModSettings
     {
         private static MelonPreferences_Entry<bool> _useMph;
@@ -17,7 +17,16 @@ namespace SokudoTuners
             _useMph = category.CreateEntry("UseMph", true, "Use mph", "Show speeds in mph instead of km/h.");
         }
 
-        public static bool UseMph => _useMph.Value;
+        // Setting it saves straight away, so the choice survives a crash too. The HUD notices the change on its own.
+        public static bool UseMph
+        {
+            get => _useMph.Value;
+            set
+            {
+                _useMph.Value = value;
+                MelonPreferences.Save();
+            }
+        }
 
         // The game shows speed at 1.4x the real physics speed (LandVehicle.SPEED_DISPLAY_MULTIPLIER).
         // Everything I show goes through here so the HUD and the timer always agree.

@@ -13,6 +13,13 @@ namespace SokudoTuners
         Nitro
     }
 
+    // One bar in the tuning menu. Value is 0-1 measured against the best tier, so Race always fills the bar.
+    public struct UpgradeStat
+    {
+        public string Label;
+        public float Value;
+    }
+
     // Which tier each car has in each category. Tier 0 is stock.
     // Upgrades are multipliers on the car's own prefab values, so a tuned van stays slower than a
     // tuned Cheetah but both feel the same step up.
@@ -20,7 +27,7 @@ namespace SokudoTuners
     {
         public const int MaxTier = 3;
 
-        private static readonly string[] TierNames = { "Stock", "Tier 1", "Tier 2", "Tier 3" };
+        private static readonly string[] TierNames = { "Stock", "Street", "Sport", "Race" };
 
         // Torque multiplier per engine tier. More torque means harder acceleration and a higher top speed,
         // since nothing in the game caps speed apart from drag and friction.
@@ -59,8 +66,7 @@ namespace SokudoTuners
             return _tiers.TryGetValue(vehicle.GUID, out int[] tiers) ? tiers[(int)type] : 0;
         }
 
-        // Stock -> 1 -> 2 -> 3 -> back to stock. Only the debug keys use this, the tuning menu will set tiers directly.
-        public static int CycleTier(LandVehicle vehicle, UpgradeType type)
+        public static void SetTier(LandVehicle vehicle, UpgradeType type, int tier)
         {
             if (!_tiers.TryGetValue(vehicle.GUID, out int[] tiers))
             {
@@ -68,9 +74,8 @@ namespace SokudoTuners
                 _tiers[vehicle.GUID] = tiers;
             }
 
-            tiers[(int)type] = (tiers[(int)type] + 1) % (MaxTier + 1);
+            tiers[(int)type] = Math.Max(0, Math.Min(MaxTier, tier));
             TierChanged?.Invoke(vehicle, type);
-            return tiers[(int)type];
         }
 
         public static string TierName(int tier) => TierNames[tier];
@@ -87,7 +92,38 @@ namespace SokudoTuners
         public static float NitroAcceleration(LandVehicle vehicle) => NitroPush[GetTier(vehicle, UpgradeType.Nitro)];
         public static float NitroMaxSpeedKmh(LandVehicle vehicle) => NitroSpeedCap[GetTier(vehicle, UpgradeType.Nitro)];
 
-        // What the tier does, for the log line when it changes.
+        // The bars the tuning menu shows for each category.
+        public static UpgradeStat[] GetStats(UpgradeType type, int tier)
+        {
+            switch (type)
+            {
+                case UpgradeType.Engine:
+                    return new[] { Stat("POWER", EngineTorque, tier) };
+                case UpgradeType.Tires:
+                    return new[] { Stat("TRACTION", TireForwardGrip, tier), Stat("CORNERING", TireSideGrip, tier) };
+                case UpgradeType.Suspension:
+                    return new[] { Stat("STIFFNESS", SuspensionSpring, tier), Stat("DOWNFORCE", SuspensionDownforce, tier) };
+                case UpgradeType.Brakes:
+                    return new[] { Stat("STOPPING", BrakeTorque, tier) };
+                case UpgradeType.Nitro:
+                    // Refill is a time, so lower is better. I flip it so a faster refill still means a longer bar.
+                    return new[]
+                    {
+                        Stat("CAPACITY", NitroTank, tier),
+                        new UpgradeStat { Label = "REFILL", Value = NitroRefill[MaxTier] / NitroRefill[tier] },
+                        Stat("BOOST", NitroPush, tier)
+                    };
+                default:
+                    return new UpgradeStat[0];
+            }
+        }
+
+        private static UpgradeStat Stat(string label, float[] values, int tier)
+        {
+            return new UpgradeStat { Label = label, Value = values[tier] / values[MaxTier] };
+        }
+
+        // What the tier does, for the log line when it changes and the menu's small print.
         public static string Describe(UpgradeType type, int tier)
         {
             switch (type)

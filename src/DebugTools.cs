@@ -1,19 +1,11 @@
 using MelonLoader;
-using ScheduleOne;
 using ScheduleOne.Vehicles;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace SokudoTuners
 {
-    // Testing helpers while I balance the upgrades. The tuning menu replaces the hotkeys later.
-    //   F5  cycle the engine tier of the car I'm driving
-    //   F6  cycle the tire tier
-    //   F7  cycle the suspension tier
-    //   F8  cycle the brake tier
-    //   F9  cycle the nitro tier
-    // Plus automatic 0-60 and 60-0 timers in the console (0-100 / 100-0 in km/h), so tiers can be compared
-    // with numbers, not feel.
+    // Testing helpers while I balance the upgrades: automatic 0-60 and 60-0 timers in the console
+    // (0-100 / 100-0 in km/h), so tiers can be compared with numbers, not feel.
     public static class DebugTools
     {
         // On the HUD's speed scale, in whichever unit the HUD is showing.
@@ -36,36 +28,9 @@ namespace SokudoTuners
                 return;
             }
 
-            HandleHotkeys(vehicle);
-
             float speed = ModSettings.DisplaySpeed(vehicle.Rb.velocity.magnitude);
             UpdateAccelerationTimer(vehicle, speed);
             UpdateBrakingTimer(vehicle, speed);
-        }
-
-        private static void HandleHotkeys(LandVehicle vehicle)
-        {
-            Keyboard keyboard = Keyboard.current;
-            if (keyboard == null || GameInput.IsTyping)
-                return;
-
-            if (keyboard.f5Key.wasPressedThisFrame)
-                Cycle(vehicle, UpgradeType.Engine);
-            if (keyboard.f6Key.wasPressedThisFrame)
-                Cycle(vehicle, UpgradeType.Tires);
-            if (keyboard.f7Key.wasPressedThisFrame)
-                Cycle(vehicle, UpgradeType.Suspension);
-            if (keyboard.f8Key.wasPressedThisFrame)
-                Cycle(vehicle, UpgradeType.Brakes);
-            if (keyboard.f9Key.wasPressedThisFrame)
-                Cycle(vehicle, UpgradeType.Nitro);
-        }
-
-        private static void Cycle(LandVehicle vehicle, UpgradeType type)
-        {
-            int tier = Upgrades.CycleTier(vehicle, type);
-            Melon<SokudoTunersMod>.Logger.Msg(
-                $"{type} on '{vehicle.VehicleName}' is now {Upgrades.TierName(tier)} ({Upgrades.Describe(type, tier)})");
         }
 
         // Starts when I pull away from a standstill and stops at the target. Lifting off or stopping cancels it.

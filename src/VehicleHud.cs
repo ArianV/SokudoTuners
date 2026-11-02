@@ -67,10 +67,11 @@ namespace SokudoTuners
             if (_root == null && !TryBuild(imperial))
                 return;
 
-            // Passengers see the vehicle HUD too, but the gauge is only for the driver.
+            // Passengers see the vehicle HUD too, but the gauge is only for the driver. It also steps aside
+            // while the tuning menu is open so the garage screen stays clean.
             LandVehicle vehicle = LocalDriver.GetVehicle();
-            _root.SetActive(vehicle != null);
-            if (vehicle == null)
+            _root.SetActive(vehicle != null && !TuningMenu.IsOpen);
+            if (vehicle == null || TuningMenu.IsOpen)
                 return;
 
             // The game keeps writing its own speed text every frame, so I keep it switched off.

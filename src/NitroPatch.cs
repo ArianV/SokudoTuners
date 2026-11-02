@@ -37,8 +37,8 @@ namespace SokudoTuners
 
         private static bool IsNitroHeld()
         {
-            // Don't boost while typing in chat or a text box.
-            if (GameInput.IsTyping)
+            // Don't boost while typing in chat or a text box, or while I'm in the garage.
+            if (GameInput.IsTyping || TuningMenu.IsOpen)
                 return false;
 
             Keyboard keyboard = Keyboard.current;
