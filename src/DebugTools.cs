@@ -8,6 +8,7 @@ namespace SokudoTuners
 {
     // Testing helpers while I balance the upgrades. The tuning menu replaces the hotkeys later.
     //   F5  cycle the engine tier of the car I'm driving
+    //   F6  cycle the tire tier
     // Plus an automatic 0-60 mph (or 0-100 km/h) timer in the console, so tiers can be compared with numbers, not feel.
     public static class DebugTools
     {
@@ -38,6 +39,8 @@ namespace SokudoTuners
 
             if (keyboard.f5Key.wasPressedThisFrame)
                 Cycle(vehicle, UpgradeType.Engine);
+            if (keyboard.f6Key.wasPressedThisFrame)
+                Cycle(vehicle, UpgradeType.Tires);
         }
 
         private static void Cycle(LandVehicle vehicle, UpgradeType type)
@@ -72,7 +75,8 @@ namespace SokudoTuners
                 string nitro = NitroTank.IsBoosting ? ", with nitro" : "";
                 Melon<SokudoTunersMod>.Logger.Msg(
                     $"0-{TimerTarget:0} {ModSettings.SpeedUnit} in {Time.time - _timerStart:F2}s " +
-                    $"(engine {Upgrades.TierName(Upgrades.GetTier(vehicle, UpgradeType.Engine))}{nitro})");
+                    $"(engine {Upgrades.TierName(Upgrades.GetTier(vehicle, UpgradeType.Engine))}, " +
+                    $"tires {Upgrades.TierName(Upgrades.GetTier(vehicle, UpgradeType.Tires))}{nitro})");
                 _timerStart = -1f;
             }
         }

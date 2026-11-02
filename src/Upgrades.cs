@@ -26,6 +26,11 @@ namespace SokudoTuners
         // since nothing in the game caps speed apart from drag and friction.
         private static readonly float[] EngineTorque = { 1f, 1.3f, 1.65f, 2.1f };
 
+        // Grip multipliers per tire tier. Forward grip is what puts engine power down off the line.
+        // Sideways grip rises more gently so the handbrake still kicks the back out for drifts.
+        private static readonly float[] TireForwardGrip = { 1f, 1.25f, 1.5f, 1.8f };
+        private static readonly float[] TireSideGrip = { 1f, 1.15f, 1.3f, 1.45f };
+
         // Keyed by the car's save GUID rather than the Unity object, so per-car saving can plug straight in later.
         private static readonly Dictionary<Guid, int[]> _tiers = new Dictionary<Guid, int[]>();
 
@@ -50,6 +55,8 @@ namespace SokudoTuners
         public static string TierName(int tier) => TierNames[tier];
 
         public static float EngineTorqueMultiplier(LandVehicle vehicle) => EngineTorque[GetTier(vehicle, UpgradeType.Engine)];
+        public static float TireForwardGripMultiplier(LandVehicle vehicle) => TireForwardGrip[GetTier(vehicle, UpgradeType.Tires)];
+        public static float TireSideGripMultiplier(LandVehicle vehicle) => TireSideGrip[GetTier(vehicle, UpgradeType.Tires)];
 
         // What the tier does, for the log line when it changes.
         public static string Describe(UpgradeType type, int tier)
@@ -57,6 +64,7 @@ namespace SokudoTuners
             switch (type)
             {
                 case UpgradeType.Engine: return $"x{EngineTorque[tier]} torque";
+                case UpgradeType.Tires: return $"x{TireForwardGrip[tier]} traction, x{TireSideGrip[tier]} cornering grip";
                 default: return "not built yet";
             }
         }
