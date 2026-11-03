@@ -168,12 +168,21 @@ namespace SokudoTuners
 
         private static void SetPinIcon()
         {
-            if (_pin == null || _pin.IconContainer == null || ModAssets.Icon == null)
+            if (_pin == null || _pin.IconContainer == null || ModAssets.PinGlyph == null)
                 return;
-            foreach (Image image in _pin.IconContainer.GetComponentsInChildren<Image>(true))
+
+            // Keep the pin's own round background but tint it pink, and swap the symbol on top for my S.
+            Image[] images = _pin.IconContainer.GetComponentsInChildren<Image>(true);
+            for (int i = 0; i < images.Length; i++)
             {
-                image.sprite = ModAssets.Icon;
-                image.color = Color.white;
+                if (i == 0 && images.Length > 1)
+                {
+                    images[i].color = new Color(1f, 0.16f, 0.52f);
+                    continue;
+                }
+                images[i].sprite = ModAssets.PinGlyph;
+                images[i].color = Color.white;
+                images[i].preserveAspect = true;
             }
         }
     }

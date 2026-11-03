@@ -8,8 +8,10 @@ namespace SokudoTuners
     public static class ModAssets
     {
         private static Sprite _icon;
+        private static Sprite _pinGlyph;
 
         public static Sprite Icon => _icon != null ? _icon : _icon = LoadSprite("icon.png");
+        public static Sprite PinGlyph => _pinGlyph != null ? _pinGlyph : _pinGlyph = LoadSprite("pin.png");
 
         public static Texture2D LoadTexture(string name)
         {

@@ -70,7 +70,9 @@ namespace SokudoTuners
 
         private static Vector3 Centre(LandVehicle vehicle) => vehicle.transform.position + Vector3.up * 0.9f;
 
-        // Keeps the camera from swinging through walls when I'm parked next to a building.
+        // Keeps the camera from swinging through walls when I'm parked next to a building or inside the shop.
+        // Rays don't hit the back of a mesh, so from inside a room they pass straight out through the wall.
+        // Casting back from the camera's spot as well catches the wall's outside face.
         private static Vector3 KeepOutOfWalls(Vector3 centre, Vector3 wanted)
         {
             Vector3 toCamera = wanted - centre;
@@ -79,13 +81,19 @@ namespace SokudoTuners
 
             float allowed = distance;
             foreach (RaycastHit hit in Physics.RaycastAll(centre, direction, distance, ~0, QueryTriggerInteraction.Ignore))
-            {
-                if (hit.collider.transform.IsChildOf(_vehicle.transform))
-                    continue;
-                allowed = Mathf.Min(allowed, hit.distance - 0.3f);
-            }
+                if (!Ignored(hit.collider))
+                    allowed = Mathf.Min(allowed, hit.distance - 0.3f);
+            foreach (RaycastHit hit in Physics.RaycastAll(wanted, -direction, distance, ~0, QueryTriggerInteraction.Ignore))
+                if (!Ignored(hit.collider))
+                    allowed = Mathf.Min(allowed, distance - hit.distance - 0.3f);
 
             return centre + direction * Mathf.Max(allowed, 1.5f);
+        }
+
+        private static bool Ignored(Collider collider)
+        {
+            Transform hit = collider.transform;
+            return hit.IsChildOf(_vehicle.transform) || (Player.Local != null && hit.IsChildOf(Player.Local.transform));
         }
     }
 }
