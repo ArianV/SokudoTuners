@@ -10,7 +10,8 @@ Successor to my older mod VNitro, rebuilt from scratch.
 
 - **Nitro** - install a nitro kit in the garage, then hold Left Shift to boost. Blue exhaust flames, an FOV kick, a tank that drains and refills, and a Shift prompt that lights up while it fires.
 - **Racing speedometer** - a round gauge with a needle and a curved nitro bar. Unlike the stock one it doesn't freeze at high speed.
-- **Tuning garage** - press F4 in the driver's seat. NFS-style menu with an orbit camera, before/after stat bars and sounds.
+- **Sokudo Tuners shop** - Marco's auto shop at the downtown gas station is now Sokudo Tuners, with a neon sign, pink and cyan lighting and a glowing bay. Open 24/7, with its own pin on the map.
+- **Drive-in garage** - drive into the shop and a cutscene rolls your car into the bay, then the tuning menu opens with an orbit camera, before/after stat bars and sounds. Leave and it drives you back out onto the street. Or talk to Marco with your car parked inside.
 - **Five upgrade categories**, each with Stock / Street / Sport / Race tiers:
   - Engine: acceleration and top speed
   - Tires: traction and cornering grip
@@ -27,7 +28,9 @@ Upgrades are free for now. Prices may come in a later update.
 | Key | Action |
 |---|---|
 | Left Shift | Nitro (once a kit is installed) |
-| F4 | Open / close the garage (stop the car first) |
+| *drive in* | Open the garage at Sokudo Tuners |
+| F4 | Open / close the garage while parked in the shop |
+| Space / Enter | Skip the drive-in and drive-out cutscenes |
 | W/S or ↑/↓ | Choose a part |
 | A/D or ←/→ | Choose a tier |
 | Enter / Space | Install |
@@ -49,7 +52,10 @@ Manually: put `SokudoTuners.dll` in `Schedule I\Mods`.
 
 - Built and tested in single player.
 - Upgrades are saved in `SokudoTuners.txt` inside your save folder, so removing the mod never breaks a save.
-- Settings are in `UserData\MelonPreferences.cfg` under `[SokudoTuners]`. Turn on `DebugLogging` for 0-60 / 60-0 times in the console.
+- Settings are in `UserData\MelonPreferences.cfg` under `[SokudoTuners]`:
+  - `TuneAnywhere = true` lets F4 open the garage anywhere instead of only at the shop.
+  - `DebugLogging = true` logs 0-60 / 60-0 times in the console (and also allows tuning anywhere).
+- Marco stays at his shop around the clock while the mod is installed.
 
 ## Building from source
 

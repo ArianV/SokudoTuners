@@ -4,7 +4,7 @@
     <TargetFramework>net472</TargetFramework>
     <AssemblyName>SokudoTuners</AssemblyName>
     <RootNamespace>SokudoTuners</RootNamespace>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <LangVersion>latest</LangVersion>
 
     <!-- Otherwise it compiles the decompiled game code too. -->

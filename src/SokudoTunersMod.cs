@@ -1,6 +1,6 @@
 using MelonLoader;
 
-[assembly: MelonInfo(typeof(SokudoTuners.SokudoTunersMod), "Sokudo Tuners", "1.0.0", "Arian Vahdat")]
+[assembly: MelonInfo(typeof(SokudoTuners.SokudoTunersMod), "Sokudo Tuners", "1.1.0", "Arian Vahdat")]
 [assembly: MelonGame("TVGS", "Schedule I")]
 
 namespace SokudoTuners

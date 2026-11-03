@@ -1,8 +1,8 @@
 {
   "name": "SokudoTuners",
-  "version_number": "1.0.0",
+  "version_number": "1.1.0",
   "website_url": "https://github.com/ArianV/SokudoTuners",
-  "description": "Arcade car tuning: nitro, a racing speedometer and an NFS-style F4 garage with engine, tire, suspension, brake and nitro upgrades saved per car. Mono (alternate) branch.",
+  "description": "Arcade car tuning: nitro, a racing speedometer and a neon Sokudo Tuners shop with a drive-in garage for engine, tire, suspension, brake and nitro upgrades saved per car. Mono (alternate) branch.",
   "dependencies": [
     "LavaGang-MelonLoader-0.7.3"
   ]

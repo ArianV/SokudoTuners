@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.0
+
+The shop update.
+
+- Marco's auto shop is now Sokudo Tuners: neon sign, pink and cyan lamps, ceiling tubes, a glowing bay and darker walls
+- Drive into the shop for a cutscene that rolls your car into the bay and opens the garage
+- Leaving drives you back out with a cutscene that steers around anything in front of the door
+- Talk to Marco to tune a car parked in the bay
+- Marco is open 24/7, and the shop has its own map pin
+- F4 only works at the shop by default; set `TuneAnywhere` to use it anywhere
+- F4 prompt shows while parked in the bay
+
 ## 1.0.0
 
 First release.
