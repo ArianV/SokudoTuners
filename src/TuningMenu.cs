@@ -94,6 +94,7 @@ namespace SokudoTuners
         private static Sprite _notifyIcon;
 
         private static LandVehicle _vehicle;
+        private static bool _onFoot;
         private static int _selected;
         private static int _preview;
         private static float _openedAt;
@@ -116,7 +117,10 @@ namespace SokudoTuners
                 return;
             }
 
-            if (LocalDriver.GetVehicle() != _vehicle)
+            bool lostCar = _onFoot
+                ? _vehicle == null || _vehicle.IsOccupied
+                : LocalDriver.GetVehicle() != _vehicle;
+            if (lostCar)
             {
                 Close();
                 return;
@@ -134,6 +138,12 @@ namespace SokudoTuners
             if (Singleton<PauseMenu>.InstanceExists && Singleton<PauseMenu>.Instance.IsPaused)
                 return;
 
+            if (!ModSettings.CanTuneAnywhere && !AutoShop.IsInBay(vehicle))
+            {
+                Notify("Sokudo Tuners", "Drive into the auto shop at the gas station");
+                return;
+            }
+
             // The car coasts while the menu has the controls.
             float stopSpeed = ModSettings.UseMph ? 10f : 16f;
             if (ModSettings.DisplaySpeed(vehicle.Rb.velocity.magnitude) > stopSpeed)
@@ -142,8 +152,24 @@ namespace SokudoTuners
                 return;
             }
 
+            Open(vehicle, false);
+        }
+
+        // From Marco's dialogue: I'm standing in the shop and the car is parked in the bay.
+        public static void OpenOnFoot(LandVehicle vehicle)
+        {
+            if (!IsOpen && vehicle != null)
+                Open(vehicle, true);
+        }
+
+        private static void Open(LandVehicle vehicle, bool onFoot)
+        {
             if (_root == null && !Build())
                 return;
+
+            _onFoot = onFoot;
+            // CameraMode has to match what I'm doing or the camera jumps into or out of the car.
+            _state.Properties = MenuProperties(onFoot ? PlayerSingleton<PlayerCamera>.Instance.CameraMode : PlayerCamera.ECameraMode.Vehicle);
 
             _vehicle = vehicle;
             _selected = 0;
@@ -159,7 +185,7 @@ namespace SokudoTuners
             _canvas.enabled = true;
             IsOpen = true;
             _openedAt = Time.unscaledTime;
-            GarageCamera.Begin(vehicle);
+            GarageCamera.Begin(vehicle, onFoot);
             MenuSounds.Prepare();
             MenuSounds.Click();
 
@@ -188,10 +214,26 @@ namespace SokudoTuners
 
             IsOpen = false;
             _vehicle = null;
+            GarageCamera.End();
             if (_canvas != null)
                 _canvas.enabled = false;
             if (_exitListener != null)
                 GameInput.DeregisterExitListener(_exitListener);
+        }
+
+        private static StateProperties MenuProperties(PlayerCamera.ECameraMode cameraMode)
+        {
+            return new StateProperties(
+                StateProperties.EMouseState.Free,
+                StateProperties.ECrosshairState.Hidden,
+                StateProperties.EEquippingState.Disabled,
+                StateProperties.EInventoryState.Disabled,
+                StateProperties.EHUDState.Hidden,
+                StateProperties.ECompassState.Hidden,
+                StateProperties.EMovementState.Locked,
+                StateProperties.ELookState.Locked,
+                StateProperties.EBlurState.Disabled,
+                cameraMode);
         }
 
         private static void OnExit(ExitAction action)
@@ -403,19 +445,7 @@ namespace SokudoTuners
             _root.AddComponent<GraphicRaycaster>();
             _group = _root.AddComponent<CanvasGroup>();
 
-            // CameraMode has to stay Vehicle or the camera leaves the car.
             _state = _root.AddComponent<MonoState>();
-            _state.Properties = new StateProperties(
-                StateProperties.EMouseState.Free,
-                StateProperties.ECrosshairState.Hidden,
-                StateProperties.EEquippingState.Disabled,
-                StateProperties.EInventoryState.Disabled,
-                StateProperties.EHUDState.Hidden,
-                StateProperties.ECompassState.Hidden,
-                StateProperties.EMovementState.Locked,
-                StateProperties.ELookState.Locked,
-                StateProperties.EBlurState.Disabled,
-                PlayerCamera.ECameraMode.Vehicle);
             _state.InitializeDefaultParent(SceneState.Current.InGame);
             _state.OnRemovedFromStack += OnClosed;
 
@@ -634,7 +664,7 @@ namespace SokudoTuners
             if (!Singleton<NotificationsManager>.InstanceExists)
                 return;
             if (_notifyIcon == null)
-                _notifyIcon = MakeSlantSprite(64, 64, 14, new Color32(255, 41, 133, 255));
+                _notifyIcon = ModAssets.Icon ?? MakeSlantSprite(64, 64, 14, new Color32(255, 41, 133, 255));
             Singleton<NotificationsManager>.Instance.SendNotification(title, subtitle, _notifyIcon, 3f);
         }
 

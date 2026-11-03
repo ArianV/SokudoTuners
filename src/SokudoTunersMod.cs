@@ -21,9 +21,10 @@ namespace SokudoTuners
 
         public override void OnUpdate()
         {
+            AutoShop.Update();
             TuningMenu.Update();
             VehicleHud.Update();
-            NitroButton.Update();
+            HudPrompts.Update();
             NitroFlames.Update();
             DebugTools.Update();
             ShopInspector.Update();

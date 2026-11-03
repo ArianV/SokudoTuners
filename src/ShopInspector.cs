@@ -8,7 +8,9 @@ using MelonLoader.Utils;
 using ScheduleOne;
 using ScheduleOne.DevUtilities;
 using ScheduleOne.Map;
+using ScheduleOne.NPCs;
 using ScheduleOne.NPCs.CharacterClasses;
+using ScheduleOne.NPCs.Schedules;
 using ScheduleOne.PlayerScripts;
 using ScheduleOne.UI;
 using TMPro;
@@ -56,6 +58,7 @@ namespace SokudoTuners
                     text.AppendLine($"Marco vehicle detector: {Path(marco.VehicleDetector.transform)} at {marco.VehicleDetector.transform.position}");
                 if (marco.VehicleRecoveryPoint != null)
                     text.AppendLine($"Marco recovery point: {marco.VehicleRecoveryPoint.position}");
+                DumpSchedule(marco, text);
             }
             else
                 text.AppendLine("Marco: not found");
@@ -120,6 +123,30 @@ namespace SokudoTuners
             string file = System.IO.Path.Combine(folder, $"scene-dump-{DateTime.Now:yyyyMMdd-HHmmss}.txt");
             File.WriteAllText(file, text.ToString());
             return file;
+        }
+
+        private static void DumpSchedule(Marco marco, StringBuilder text)
+        {
+            NPCScheduleManager schedule = marco.GetComponentInChildren<NPCScheduleManager>(true);
+            if (schedule == null)
+            {
+                text.AppendLine("Marco schedule: not found");
+                return;
+            }
+
+            text.AppendLine($"Marco schedule: {Path(schedule.transform)}  enabled {schedule.ScheduleEnabled}  curfew mode {schedule.CurfewModeEnabled}  " +
+                            $"active '{(schedule.ActiveAction != null ? schedule.ActiveAction.GetName() : "-")}'");
+            foreach (GameObject go in schedule.EnabledDuringCurfew ?? new GameObject[0])
+                text.AppendLine($"  enabled during curfew: {(go != null ? Path(go.transform) : "-")}");
+            foreach (GameObject go in schedule.EnabledDuringNoCurfew ?? new GameObject[0])
+                text.AppendLine($"  enabled outside curfew: {(go != null ? Path(go.transform) : "-")}");
+
+            foreach (NPCAction action in schedule.GetComponentsInChildren<NPCAction>(true))
+            {
+                string inList = schedule.ActionList.Contains(action) ? "in list" : "not in list";
+                text.AppendLine($"  {action.GetType().Name}  '{action.GetName()}'  {action.GetTimeDescription()}  start {action.StartTime} end {action.GetEndTime()}  " +
+                                $"active {action.gameObject.activeInHierarchy}  {inList}  {Path(action.transform)}");
+            }
         }
 
         private static bool Near(Transform transform, Vector3 centre, out float distance)

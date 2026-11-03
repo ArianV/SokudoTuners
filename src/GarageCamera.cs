@@ -16,18 +16,33 @@ namespace SokudoTuners
         private const float AimOffset = 0.28f;
 
         private static LandVehicle _vehicle;
+        private static bool _onFoot;
         private static float _angle;
 
         private static bool Prefix() => !TuningMenu.IsOpen;
 
-        public static void Begin(LandVehicle vehicle)
+        public static void Begin(LandVehicle vehicle, bool onFoot)
         {
             _vehicle = vehicle;
+            _onFoot = onFoot;
             if (!PlayerSingleton<PlayerCamera>.InstanceExists)
                 return;
 
-            Vector3 offset = PlayerSingleton<PlayerCamera>.Instance.transform.position - Centre(vehicle);
+            PlayerCamera camera = PlayerSingleton<PlayerCamera>.Instance;
+            // On foot the camera hangs off the player. Overriding it unhooks it, like the paint shop does.
+            if (onFoot)
+                camera.OverrideTransform(camera.transform.position, camera.transform.rotation, 0f);
+
+            Vector3 offset = camera.transform.position - Centre(vehicle);
             _angle = Mathf.Atan2(offset.x, offset.z) * Mathf.Rad2Deg;
+        }
+
+        public static void End()
+        {
+            if (_onFoot && PlayerSingleton<PlayerCamera>.InstanceExists)
+                PlayerSingleton<PlayerCamera>.Instance.StopTransformOverride(0f);
+            _vehicle = null;
+            _onFoot = false;
         }
 
         public static void LateUpdate()

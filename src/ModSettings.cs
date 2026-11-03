@@ -6,6 +6,7 @@ namespace SokudoTuners
     public static class ModSettings
     {
         private static MelonPreferences_Entry<bool> _useMph;
+        private static MelonPreferences_Entry<bool> _tuneAnywhere;
         private static MelonPreferences_Entry<bool> _debugLogging;
 
         public static void Init()
@@ -14,11 +15,15 @@ namespace SokudoTuners
 
             // Separate from the game's unit setting on purpose.
             _useMph = category.CreateEntry("UseMph", true, "Use mph", "Show speeds in mph instead of km/h.");
+            _tuneAnywhere = category.CreateEntry("TuneAnywhere", false, "Tune anywhere",
+                "Let F4 open the garage anywhere instead of only at Sokudo Tuners.");
             _debugLogging = category.CreateEntry("DebugLogging", false, "Debug logging",
-                "Log 0-60 / 60-0 times and per-car stats to the console.");
+                "Log 0-60 / 60-0 times and per-car stats to the console. Also allows tuning anywhere.");
         }
 
         public static bool DebugLoggingEnabled => _debugLogging.Value;
+
+        public static bool CanTuneAnywhere => _tuneAnywhere.Value || _debugLogging.Value;
 
         public static void LogDebug(string message)
         {

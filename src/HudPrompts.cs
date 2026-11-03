@@ -11,8 +11,9 @@ using UnityEngine.UI;
 
 namespace SokudoTuners
 {
-    // SHIFT / NITRO prompt that sits above the game's own key prompts once a car has a nitro kit, and lights up while boosting.
-    public static class NitroButton
+    // My key prompts, stacked above the game's own ones: SHIFT / Nitro once a car has a kit (lights up while boosting),
+    // and F4 / Sokudo Tuners while I'm parked in the shop.
+    public static class HudPrompts
     {
         private static readonly AccessTools.FieldRef<InputPromptsManager, InputPromptsUI> PromptsUI =
             AccessTools.FieldRefAccess<InputPromptsManager, InputPromptsUI>("_inputPromptsUI");
@@ -20,22 +21,30 @@ namespace SokudoTuners
             AccessTools.FieldRefAccess<InputPromptsUI, Transform>("_promptsBottomLeftInGameContainer");
 
         private static readonly Color Cyan = new Color(0.3f, 0.9f, 1f);
+        private static readonly Color Pink = new Color(1f, 0.16f, 0.52f);
         private static readonly Color Empty = new Color(1f, 0.3f, 0.3f);
         private static readonly Color ChipIdle = new Color(1f, 1f, 1f, 0.16f);
         private static readonly Color TextIdle = new Color(1f, 1f, 1f, 0.6f);
 
-        private const float ChipWidth = 74f;
         private const float ChipHeight = 32f;
+        private const float Gap = 8f;
         private const float GlowPadding = 18f;
         private static readonly Vector2 FallbackPosition = new Vector2(42f, 300f);
 
+        private class Chip
+        {
+            public RectTransform Rect;
+            public RectTransform KeyRect;
+            public Image Key;
+            public Image Glow;
+            public TextMeshProUGUI KeyText;
+            public TextMeshProUGUI Label;
+        }
+
         private static GameObject _root;
         private static RectTransform _rect;
-        private static RectTransform _chipRect;
-        private static Image _chip;
-        private static Image _glow;
-        private static TextMeshProUGUI _key;
-        private static TextMeshProUGUI _label;
+        private static Chip _nitro;
+        private static Chip _tune;
         private static float _lit;
         private static float _emptyFlash;
         private static readonly Vector3[] _corners = new Vector3[4];
@@ -46,17 +55,39 @@ namespace SokudoTuners
                 return;
 
             LandVehicle vehicle = LocalDriver.GetVehicle();
-            bool show = vehicle != null && !TuningMenu.IsOpen && Upgrades.HasNitro(vehicle);
-            _root.SetActive(show);
-            if (!show)
+            bool driving = vehicle != null && !TuningMenu.IsOpen;
+            bool showNitro = driving && Upgrades.HasNitro(vehicle);
+            bool showTune = driving && AutoShop.IsInBay(vehicle);
+
+            _root.SetActive(showNitro || showTune);
+            _nitro.Rect.gameObject.SetActive(showNitro);
+            _tune.Rect.gameObject.SetActive(showTune);
+            if (!showNitro)
             {
                 _lit = 0f;
                 _emptyFlash = 0f;
-                return;
             }
+            if (!showNitro && !showTune)
+                return;
 
             PlaceAbovePrompts();
+            float y = 0f;
+            if (showNitro)
+            {
+                _nitro.Rect.anchoredPosition = new Vector2(0f, y);
+                y += ChipHeight + Gap;
+                AnimateNitro();
+            }
+            if (showTune)
+            {
+                _tune.Rect.anchoredPosition = new Vector2(0f, y);
+                float pulse = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 3f);
+                _tune.Glow.color = new Color(Pink.r, Pink.g, Pink.b, 0.25f + 0.25f * pulse);
+            }
+        }
 
+        private static void AnimateNitro()
+        {
             Keyboard keyboard = Keyboard.current;
             bool held = keyboard != null && keyboard.leftShiftKey.isPressed && !GameInput.IsTyping;
             bool boosting = NitroTank.IsBoosting;
@@ -67,12 +98,12 @@ namespace SokudoTuners
 
             float pulse = boosting ? 0.75f + 0.25f * Mathf.Sin(Time.unscaledTime * 14f) : 1f;
 
-            Color chip = Color.Lerp(ChipIdle, new Color(Cyan.r, Cyan.g, Cyan.b, 0.95f), _lit);
-            _chip.color = Color.Lerp(chip, new Color(Empty.r, Empty.g, Empty.b, 0.55f), _emptyFlash * (1f - _lit));
-            _key.color = Color.Lerp(TextIdle, new Color(0.05f, 0.05f, 0.1f), _lit);
-            _label.color = Color.Lerp(Color.Lerp(TextIdle, Empty, _emptyFlash), Cyan, _lit);
-            _glow.color = new Color(Cyan.r, Cyan.g, Cyan.b, 0.7f * _lit * pulse);
-            _chipRect.localScale = Vector3.one * (1f + 0.08f * _lit);
+            Color key = Color.Lerp(ChipIdle, new Color(Cyan.r, Cyan.g, Cyan.b, 0.95f), _lit);
+            _nitro.Key.color = Color.Lerp(key, new Color(Empty.r, Empty.g, Empty.b, 0.55f), _emptyFlash * (1f - _lit));
+            _nitro.KeyText.color = Color.Lerp(TextIdle, new Color(0.05f, 0.05f, 0.1f), _lit);
+            _nitro.Label.color = Color.Lerp(Color.Lerp(TextIdle, Empty, _emptyFlash), Cyan, _lit);
+            _nitro.Glow.color = new Color(Cyan.r, Cyan.g, Cyan.b, 0.7f * _lit * pulse);
+            _nitro.KeyRect.localScale = Vector3.one * (1f + 0.08f * _lit);
         }
 
         // Measures the prompts actually on screen each frame, so it stays put as the list changes (passenger, gamepad...).
@@ -120,37 +151,55 @@ namespace SokudoTuners
                 return false;
             TMP_FontAsset font = canvas.SpeedText.font;
 
-            _root = new GameObject("SokudoNitroButton", typeof(RectTransform));
+            _root = new GameObject("SokudoPrompts", typeof(RectTransform));
             _rect = (RectTransform)_root.transform;
             _rect.SetParent(canvas.Canvas.transform, false);
             _rect.anchorMin = _rect.anchorMax = Vector2.zero;
             _rect.pivot = Vector2.zero;
-            _rect.sizeDelta = new Vector2(200f, ChipHeight);
+            _rect.sizeDelta = new Vector2(260f, ChipHeight);
             _rect.anchoredPosition = FallbackPosition;
 
-            Vector2 chipCentre = new Vector2(ChipWidth / 2f, ChipHeight / 2f);
-            int glowWidth = (int)(ChipWidth + GlowPadding * 2f);
-            int glowHeight = (int)(ChipHeight + GlowPadding * 2f);
-            _glow = AddImage(Node(_rect, chipCentre, new Vector2(glowWidth, glowHeight)),
-                RoundedSprite(glowWidth, glowHeight, 7f + GlowPadding, GlowPadding));
-
-            _chipRect = Node(_rect, chipCentre, new Vector2(ChipWidth, ChipHeight));
-            _chip = AddImage(_chipRect, RoundedSprite((int)ChipWidth, (int)ChipHeight, 7f, 0f));
-
-            _key = AddText(_chipRect, font, "SHIFT", 15f, Vector2.zero, new Vector2(ChipWidth, ChipHeight), TextAlignmentOptions.Center);
-            _label = AddText(_rect, font, "Nitro", 19f, new Vector2(ChipWidth + 10f + 60f, ChipHeight / 2f), new Vector2(120f, ChipHeight),
-                TextAlignmentOptions.Left);
+            _nitro = MakeChip(font, "SHIFT", "Nitro", 74f);
+            _tune = MakeChip(font, "F4", "Sokudo Tuners", 46f);
+            _tune.Key.color = new Color(Pink.r, Pink.g, Pink.b, 0.85f);
+            _tune.KeyText.color = Color.white;
+            _tune.Label.color = Color.white;
 
             _root.SetActive(false);
             return true;
         }
 
-        private static RectTransform Node(RectTransform parent, Vector2 centre, Vector2 size)
+        private static Chip MakeChip(TMP_FontAsset font, string key, string label, float keyWidth)
+        {
+            Chip chip = new Chip();
+            chip.Rect = Node(_rect, Vector2.zero, new Vector2(260f, ChipHeight), Vector2.zero);
+
+            Vector2 keyCentre = new Vector2(keyWidth / 2f, ChipHeight / 2f);
+            int glowWidth = (int)(keyWidth + GlowPadding * 2f);
+            int glowHeight = (int)(ChipHeight + GlowPadding * 2f);
+            chip.Glow = AddImage(Node(chip.Rect, keyCentre, new Vector2(glowWidth, glowHeight), new Vector2(0.5f, 0.5f)),
+                RoundedSprite(glowWidth, glowHeight, 7f + GlowPadding, GlowPadding));
+            chip.Glow.color = Color.clear;
+
+            chip.KeyRect = Node(chip.Rect, keyCentre, new Vector2(keyWidth, ChipHeight), new Vector2(0.5f, 0.5f));
+            chip.Key = AddImage(chip.KeyRect, RoundedSprite((int)keyWidth, (int)ChipHeight, 7f, 0f));
+            chip.Key.color = ChipIdle;
+
+            chip.KeyText = AddText(chip.KeyRect, font, key, 15f, new Vector2(keyWidth / 2f, ChipHeight / 2f),
+                new Vector2(keyWidth, ChipHeight), TextAlignmentOptions.Center);
+            chip.Label = AddText(chip.Rect, font, label, 19f, new Vector2(keyWidth + 10f + 100f, ChipHeight / 2f),
+                new Vector2(200f, ChipHeight), TextAlignmentOptions.Left);
+            return chip;
+        }
+
+        // Positions are measured from the parent's bottom-left corner.
+        private static RectTransform Node(RectTransform parent, Vector2 position, Vector2 size, Vector2 pivot)
         {
             RectTransform rect = (RectTransform)new GameObject("Node", typeof(RectTransform)).transform;
             rect.SetParent(parent, false);
-            rect.anchorMin = rect.anchorMax = parent == _rect ? Vector2.zero : new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = centre;
+            rect.anchorMin = rect.anchorMax = Vector2.zero;
+            rect.pivot = pivot;
+            rect.anchoredPosition = position;
             rect.sizeDelta = size;
             return rect;
         }
@@ -166,7 +215,7 @@ namespace SokudoTuners
         private static TextMeshProUGUI AddText(RectTransform parent, TMP_FontAsset font, string value, float size, Vector2 centre,
             Vector2 box, TextAlignmentOptions alignment)
         {
-            TextMeshProUGUI text = Node(parent, centre, box).gameObject.AddComponent<TextMeshProUGUI>();
+            TextMeshProUGUI text = Node(parent, centre, box, new Vector2(0.5f, 0.5f)).gameObject.AddComponent<TextMeshProUGUI>();
             text.font = font;
             text.fontSize = size;
             text.fontStyle = FontStyles.Bold | FontStyles.Italic;
