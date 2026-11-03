@@ -11,7 +11,6 @@ namespace SokudoTuners
     // around the bay and dark walls. Everything is placed from the shop's own objects so it lines up exactly.
     public static class ShopMakeover
     {
-        private const string ShopPath = "Map/Hyland Point/Region_Downtown/Gas Station/gas station/Bodyshop";
         private const string MarkerName = "SokudoMakeover";
 
         private static readonly Color Pink = new Color(1f, 0.16f, 0.52f);
@@ -28,25 +27,34 @@ namespace SokudoTuners
                 return;
             _nextCheck = Time.unscaledTime + 2f;
 
-            // The floor frame and tubes are placed from Marco's bay, so wait until AutoShop has found him.
+            // Marco's bay detector sits inside the real shop, so its parent is the shop. Looking the shop up by name
+            // found the wrong object, there's more than one "Bodyshop".
             if (AutoShop.Bay == null || AutoShop.CarSpot == null)
                 return;
-            GameObject shop = GameObject.Find(ShopPath);
-            if (shop == null || shop.transform.Find(MarkerName) != null)
+            Transform root = AutoShop.Bay.transform.parent;
+            if (root == null || root.Find(MarkerName) != null)
                 return;
 
-            Transform root = shop.transform;
             Transform made = new GameObject(MarkerName).transform;
             made.SetParent(root, false);
+            _found.Clear();
 
             // Each part on its own, so a game update breaking one doesn't take the rest down.
             Try("neon material", () => _neonTemplate = FindNeonTemplate(root));
             Try("sign", () => ReplaceSign(root, made));
-            Try("lamps", () => RecolourLamps(root));
+            Try("lamps", () => RecolourLamps(root, made));
             Try("ceiling tubes", () => AddCeilingTubes(root, made));
             Try("floor frame", () => AddFloorFrame(made));
             Try("walls", () => DarkenWalls(root));
-            ModSettings.LogDebug("Shop makeover applied.");
+            ModSettings.LogDebug($"Shop makeover applied to {root.name}: {string.Join(", ", _found.Select(p => p.Key + " " + p.Value))}");
+        }
+
+        private static readonly Dictionary<string, int> _found = new Dictionary<string, int>();
+
+        private static void Count(string part)
+        {
+            _found.TryGetValue(part, out int n);
+            _found[part] = n + 1;
         }
 
         private static void Try(string part, Action apply)
@@ -63,7 +71,11 @@ namespace SokudoTuners
 
         private static void ReplaceSign(Transform root, Transform made)
         {
-            Renderer sign = root.Find("bodyshop/Quad").GetComponent<Renderer>();
+            Renderer sign = root.GetComponentsInChildren<Renderer>(true)
+                .FirstOrDefault(r => r.sharedMaterial != null && r.sharedMaterial.name.StartsWith("Auto shop"));
+            if (sign == null)
+                return;
+            Count("sign");
             Texture2D texture = ModAssets.LoadTexture("sign.png");
 
             // A copy of the sign's own material keeps its shape and settings, I just swap the picture and make it glow.
@@ -80,14 +92,25 @@ namespace SokudoTuners
             AddLight(made, "Sign Glow", centre + outward.normalized * 1.2f, Pink, 4f, 6f);
         }
 
-        private static void RecolourLamps(Transform root)
+        // The shop's own lights may be baked into the lighting, where changing their colour does nothing, so each lamp
+        // also gets a light of mine underneath it.
+        private static void RecolourLamps(Transform root, Transform made)
         {
             List<Transform> lamps = LampsIn(root);
             for (int i = 0; i < lamps.Count; i++)
-                Recolour(lamps[i], i % 2 == 0 ? Pink : Cyan, 1.3f);
+            {
+                Color colour = i % 2 == 0 ? Pink : Cyan;
+                Recolour(lamps[i], colour, 1.3f);
+                AddLight(made, "Lamp Neon", BulbPosition(lamps[i]) + Vector3.down * 0.5f, colour, 3f, 7f);
+                Count("lamps");
+            }
 
             foreach (Transform wallLight in root.GetComponentsInChildren<Transform>(true).Where(t => t.name.StartsWith("Curved Wall Light")))
+            {
                 Recolour(wallLight, Cyan, 1.5f);
+                AddLight(made, "Wall Neon", BulbPosition(wallLight), Cyan, 1.5f, 4f);
+                Count("wall lights");
+            }
         }
 
         private static void Recolour(Transform fitting, Color colour, float brighter)
@@ -96,11 +119,21 @@ namespace SokudoTuners
             {
                 light.color = colour;
                 light.intensity *= brighter;
+                Count("game lights");
             }
 
-            Transform bulb = fitting.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == "Light" && t.GetComponent<Renderer>() != null);
+            Transform bulb = Bulb(fitting);
             if (bulb != null)
                 bulb.GetComponent<Renderer>().sharedMaterial = NeonMaterial(colour);
+        }
+
+        private static Transform Bulb(Transform fitting) =>
+            fitting.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == "Light" && t.GetComponent<Renderer>() != null);
+
+        private static Vector3 BulbPosition(Transform fitting)
+        {
+            Transform bulb = Bulb(fitting);
+            return bulb != null ? bulb.GetComponent<Renderer>().bounds.center : fitting.position;
         }
 
         // Two tubes along the ceiling, one through each row of lamps, running a metre past the end lamps.
@@ -129,6 +162,7 @@ namespace SokudoTuners
             Vector3 along = (b - a) / length;
             Vector3 middle = (a + b) / 2f + Vector3.up * 0.45f;
             AddBar(made, "Ceiling Tube", middle, Quaternion.LookRotation(along), new Vector3(0.07f, 0.07f, length + 2f), colour);
+            Count("tubes");
         }
 
         // Neon outline on the floor around the bay, sized from the shop's own vehicle detector box.
@@ -153,16 +187,17 @@ namespace SokudoTuners
             AddBar(made, "Floor Line", centre - halfX, rotation, new Vector3(width, 0.01f, size.z), Pink);
             AddBar(made, "Floor Line", centre + halfZ, rotation, new Vector3(size.x, 0.01f, width), Pink);
             AddBar(made, "Floor Line", centre - halfZ, rotation, new Vector3(size.x, 0.01f, width), Pink);
+            Count("floor frame");
         }
 
         // Every material gets its own copy so other buildings sharing it don't change.
         private static void DarkenWalls(Transform root)
         {
-            foreach (Renderer renderer in new[] { root.Find("bodyshop/Block"), root.Find("bodyshop") }.Where(t => t != null).Select(t => t.GetComponent<Renderer>()))
+            foreach (Renderer renderer in root.GetComponentsInChildren<Renderer>(true))
             {
-                if (renderer == null)
-                    continue;
                 Material[] materials = renderer.sharedMaterials;
+                if (!materials.Any(m => m != null && (m.name.StartsWith("alum sheet bodyshop") || m.name.StartsWith("brick"))))
+                    continue;
                 for (int i = 0; i < materials.Length; i++)
                 {
                     if (materials[i] == null)
@@ -173,6 +208,7 @@ namespace SokudoTuners
                         continue;
                     materials[i] = new Material(materials[i]);
                     SetColour(materials[i], tint.Value);
+                    Count("wall materials");
                 }
                 renderer.sharedMaterials = materials;
             }
@@ -188,7 +224,7 @@ namespace SokudoTuners
 
         private static Vector3 BuildingCentre(Transform root)
         {
-            Renderer building = root.Find("bodyshop")?.GetComponent<Renderer>();
+            Renderer building = root.GetComponentsInChildren<Renderer>(true).OrderByDescending(r => r.bounds.size.sqrMagnitude).FirstOrDefault();
             return building != null ? building.bounds.center : root.position;
         }
 
