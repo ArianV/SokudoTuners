@@ -102,6 +102,19 @@ namespace SokudoTuners
             renderer.sharedMaterial = material;
             renderer.shadowCastingMode = ShadowCastingMode.Off;
 
+            // A flat panel floating off the wall looks like paper from the side, so it gets a box behind the lettering
+            // running back to the wall, in the same dark as the siding so it blends in from the front.
+            GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            UnityEngine.Object.Destroy(box.GetComponent<Collider>());
+            box.name = "Sokudo Sign Box";
+            box.transform.SetPositionAndRotation(panel.transform.position - outward * 0.19f, panel.transform.rotation);
+            box.transform.localScale = new Vector3(width * 0.78f, bounds.size.y * 0.78f, 0.36f);
+            box.transform.SetParent(made, true);
+            Material boxMaterial = new Material(NeonMaterial(Siding));
+            SetColour(boxMaterial, Siding * 0.6f);
+            EnableGlow(boxMaterial, Color.black, null);
+            box.GetComponent<Renderer>().sharedMaterial = boxMaterial;
+
             AddLight(made, "Sign Glow", bounds.center + outward * 1.2f, Pink, 4f, 6f);
         }
 
