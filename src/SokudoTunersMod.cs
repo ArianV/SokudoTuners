@@ -22,6 +22,7 @@ namespace SokudoTuners
         public override void OnUpdate()
         {
             AutoShop.Update();
+            ShopCutscene.Update();
             TuningMenu.Update();
             VehicleHud.Update();
             HudPrompts.Update();
@@ -34,6 +35,7 @@ namespace SokudoTuners
         public override void OnLateUpdate()
         {
             GarageCamera.LateUpdate();
+            ShopCutscene.LateUpdate();
         }
     }
 }

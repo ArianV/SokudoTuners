@@ -19,7 +19,7 @@ namespace SokudoTuners
         private static bool _onFoot;
         private static float _angle;
 
-        private static bool Prefix() => !TuningMenu.IsOpen;
+        private static bool Prefix() => !TuningMenu.IsOpen && !ShopCutscene.Playing;
 
         public static void Begin(LandVehicle vehicle, bool onFoot)
         {
@@ -57,7 +57,7 @@ namespace SokudoTuners
             Vector3 centre = Centre(_vehicle);
             float distance = Mathf.Clamp(_vehicle.BoundingBoxDimensions.magnitude * 1.15f, 5f, 12f);
             Vector3 direction = Quaternion.Euler(0f, _angle, 0f) * Vector3.forward;
-            Vector3 target = KeepOutOfWalls(centre, centre + direction * distance + Vector3.up * HeightAboveCentre);
+            Vector3 target = KeepOutOfWalls(_vehicle, centre, centre + direction * distance + Vector3.up * HeightAboveCentre);
 
             float ease = 1f - Mathf.Exp(-3f * dt);
             camera.position = Vector3.Lerp(camera.position, target, ease);
@@ -73,7 +73,7 @@ namespace SokudoTuners
         // Keeps the camera from swinging through walls when I'm parked next to a building or inside the shop.
         // Rays don't hit the back of a mesh, so from inside a room they pass straight out through the wall.
         // Casting back from the camera's spot as well catches the wall's outside face.
-        private static Vector3 KeepOutOfWalls(Vector3 centre, Vector3 wanted)
+        public static Vector3 KeepOutOfWalls(LandVehicle vehicle, Vector3 centre, Vector3 wanted)
         {
             Vector3 toCamera = wanted - centre;
             float distance = toCamera.magnitude;
@@ -81,19 +81,19 @@ namespace SokudoTuners
 
             float allowed = distance;
             foreach (RaycastHit hit in Physics.RaycastAll(centre, direction, distance, ~0, QueryTriggerInteraction.Ignore))
-                if (!Ignored(hit.collider))
+                if (!Ignored(vehicle, hit.collider))
                     allowed = Mathf.Min(allowed, hit.distance - 0.3f);
             foreach (RaycastHit hit in Physics.RaycastAll(wanted, -direction, distance, ~0, QueryTriggerInteraction.Ignore))
-                if (!Ignored(hit.collider))
+                if (!Ignored(vehicle, hit.collider))
                     allowed = Mathf.Min(allowed, distance - hit.distance - 0.3f);
 
             return centre + direction * Mathf.Max(allowed, 1.5f);
         }
 
-        private static bool Ignored(Collider collider)
+        private static bool Ignored(LandVehicle vehicle, Collider collider)
         {
             Transform hit = collider.transform;
-            return hit.IsChildOf(_vehicle.transform) || (Player.Local != null && hit.IsChildOf(Player.Local.transform));
+            return (vehicle != null && hit.IsChildOf(vehicle.transform)) || (Player.Local != null && hit.IsChildOf(Player.Local.transform));
         }
     }
 }

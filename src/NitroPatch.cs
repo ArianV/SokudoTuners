@@ -39,7 +39,7 @@ namespace SokudoTuners
 
         private static bool IsNitroHeld()
         {
-            if (GameInput.IsTyping || TuningMenu.IsOpen)
+            if (GameInput.IsTyping || TuningMenu.IsOpen || ShopCutscene.Playing)
                 return false;
 
             Keyboard keyboard = Keyboard.current;

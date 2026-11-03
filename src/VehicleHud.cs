@@ -57,8 +57,8 @@ namespace SokudoTuners
                 return;
 
             LandVehicle vehicle = LocalDriver.GetVehicle();
-            _root.SetActive(vehicle != null && !TuningMenu.IsOpen);
-            if (vehicle == null || TuningMenu.IsOpen)
+            _root.SetActive(vehicle != null && !TuningMenu.IsOpen && !ShopCutscene.Playing);
+            if (vehicle == null || TuningMenu.IsOpen || ShopCutscene.Playing)
                 return;
 
             // The game rewrites its speed text every frame.

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using MelonLoader;
 using ScheduleOne;
@@ -162,6 +163,15 @@ namespace SokudoTuners
                 Open(vehicle, true);
         }
 
+        // After the drive-in cutscene, which already checked I'm parked in the bay.
+        public static void OpenFromCutscene(LandVehicle vehicle)
+        {
+            if (!IsOpen && vehicle != null)
+                Open(vehicle, false);
+        }
+
+        public static event Action Closed;
+
         private static void Open(LandVehicle vehicle, bool onFoot)
         {
             if (_root == null && !Build())
@@ -219,6 +229,7 @@ namespace SokudoTuners
                 _canvas.enabled = false;
             if (_exitListener != null)
                 GameInput.DeregisterExitListener(_exitListener);
+            Closed?.Invoke();
         }
 
         private static StateProperties MenuProperties(PlayerCamera.ECameraMode cameraMode)

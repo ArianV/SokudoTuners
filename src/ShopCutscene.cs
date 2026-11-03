@@ -1,0 +1,225 @@
+using System;
+using System.Collections;
+using HarmonyLib;
+using MelonLoader;
+using ScheduleOne;
+using ScheduleOne.DevUtilities;
+using ScheduleOne.PlayerScripts;
+using ScheduleOne.State;
+using ScheduleOne.UI;
+using ScheduleOne.Vehicles;
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+namespace SokudoTuners
+{
+    // Drive into the shop and it takes over: fade out, the car rolls into the bay nose first while a camera watches it
+    // pull in, then the garage opens. Space, Enter or Esc skips it.
+    //
+    // I glide the car along the path myself instead of driving it. While the game thinks a car shouldn't be physically
+    // simulated it turns the physics off and spins the wheels from how far the car moved, so I just say no for this car.
+    public static class ShopCutscene
+    {
+        private const float RollDistance = 6f;
+        private const float RollSeconds = 3.2f;
+
+        public static bool Playing { get; private set; }
+
+        private static LandVehicle _controlled;
+        private static bool _wasInBay;
+        private static float _cooldownUntil;
+        private static bool _skip;
+        private static bool _subscribed;
+
+        private static GameObject _stateObject;
+        private static MonoState _state;
+        private static GameInput.ExitDelegate _exitListener;
+
+        private static bool _shotActive;
+        private static Vector3 _shotPosition;
+
+        public static bool Controls(LandVehicle vehicle) => _controlled != null && vehicle == _controlled;
+
+        public static void Update()
+        {
+            if (!_subscribed)
+            {
+                TuningMenu.Closed += OnMenuClosed;
+                _subscribed = true;
+            }
+
+            LandVehicle vehicle = LocalDriver.GetVehicle();
+            bool inBay = AutoShop.IsInBay(vehicle);
+            if (!Playing && !TuningMenu.IsOpen && inBay && !_wasInBay && Time.unscaledTime > _cooldownUntil && DrivingIn(vehicle))
+                MelonCoroutines.Start(DriveIn(vehicle));
+            _wasInBay = inBay;
+
+            Keyboard keyboard = Keyboard.current;
+            if (Playing && keyboard != null && (keyboard.spaceKey.wasPressedThisFrame || keyboard.enterKey.wasPressedThisFrame))
+                _skip = true;
+        }
+
+        // Slow and heading into the shop, so reversing out or blasting through doesn't set it off.
+        private static bool DrivingIn(LandVehicle vehicle)
+        {
+            Transform spot = AutoShop.CarSpot;
+            if (spot == null)
+                return false;
+            Vector3 velocity = vehicle.Rb.velocity;
+            float speed = ModSettings.DisplaySpeed(velocity.magnitude);
+            return speed < (ModSettings.UseMph ? 15f : 24f) && Vector3.Dot(velocity, -Flat(spot.forward)) > 0.3f;
+        }
+
+        private static IEnumerator DriveIn(LandVehicle car)
+        {
+            Playing = true;
+            _skip = false;
+            PushState();
+
+            // FrontToKerb on the paint shop's spot parks the car nose in, in the same footprint as the paint shop uses.
+            Transform spot = AutoShop.CarSpot;
+            Tuple<Vector3, Quaternion> end = car.GetAlignmentTransform(spot, EParkingAlignment.FrontToKerb);
+            Vector3 outward = Flat(spot.forward);
+            Vector3 start = end.Item1 + outward * RollDistance;
+
+            Singleton<BlackOverlay>.Instance.Open(0.25f);
+            yield return new WaitForSeconds(0.3f);
+
+            _controlled = car;
+            yield return new WaitForFixedUpdate();
+            car.transform.SetPositionAndRotation(start, end.Item2);
+            StartShot(car, end.Item1, outward);
+            Singleton<BlackOverlay>.Instance.Close(0.4f);
+
+            for (float t = 0f; t < RollSeconds && !_skip && car != null; t += Time.deltaTime)
+            {
+                float eased = 1f - Mathf.Pow(1f - t / RollSeconds, 3f);
+                car.transform.position = Vector3.Lerp(start, end.Item1, eased);
+                yield return null;
+            }
+
+            if (car != null)
+            {
+                car.transform.SetPositionAndRotation(end.Item1, end.Item2);
+                TuningMenu.OpenFromCutscene(car);
+            }
+            _shotActive = false;
+            PopState();
+            Playing = false;
+        }
+
+        // The car stays parked under my control while the garage is open, then gets its physics back.
+        private static void OnMenuClosed()
+        {
+            if (_controlled == null)
+                return;
+            LandVehicle car = _controlled;
+            _controlled = null;
+            _cooldownUntil = Time.unscaledTime + 3f;
+            MelonCoroutines.Start(Settle(car));
+        }
+
+        private static IEnumerator Settle(LandVehicle car)
+        {
+            yield return new WaitForFixedUpdate();
+            yield return new WaitForFixedUpdate();
+            if (car == null)
+                yield break;
+            car.Rb.velocity = Vector3.zero;
+            car.Rb.angularVelocity = Vector3.zero;
+        }
+
+        // A low camera off to whichever side of the bay has more room, watching the car pull in.
+        private static void StartShot(LandVehicle car, Vector3 end, Vector3 outward)
+        {
+            Vector3 right = Vector3.Cross(Vector3.up, outward);
+            Vector3 eye = end + Vector3.up * 0.9f;
+            float side = Room(car, eye, right) >= Room(car, eye, -right) ? 1f : -1f;
+            _shotPosition = GarageCamera.KeepOutOfWalls(car, eye, end + right * side * 3.2f + outward * 1.2f + Vector3.up * 1.3f);
+            _shotActive = true;
+
+            if (PlayerSingleton<PlayerCamera>.InstanceExists)
+            {
+                Transform camera = PlayerSingleton<PlayerCamera>.Instance.transform;
+                camera.position = _shotPosition;
+                camera.rotation = Quaternion.LookRotation(car.transform.position + Vector3.up * 0.6f - _shotPosition);
+            }
+        }
+
+        public static void LateUpdate()
+        {
+            if (!_shotActive || _controlled == null || !PlayerSingleton<PlayerCamera>.InstanceExists)
+                return;
+            Transform camera = PlayerSingleton<PlayerCamera>.Instance.transform;
+            camera.position = _shotPosition;
+            Quaternion look = Quaternion.LookRotation(_controlled.transform.position + Vector3.up * 0.6f - _shotPosition);
+            camera.rotation = Quaternion.Slerp(camera.rotation, look, 1f - Mathf.Exp(-8f * Time.deltaTime));
+        }
+
+        private static float Room(LandVehicle car, Vector3 from, Vector3 direction)
+        {
+            Vector3 to = GarageCamera.KeepOutOfWalls(car, from, from + direction * 4f);
+            return Vector3.Distance(from, to);
+        }
+
+        // My own entry in the game's state stack, so the car ignores input and the HUD hides while it plays.
+        private static void PushState()
+        {
+            if (_stateObject == null)
+            {
+                _stateObject = new GameObject("SokudoCutscene");
+                _state = _stateObject.AddComponent<MonoState>();
+                _state.InitializeDefaultParent(SceneState.Current.InGame);
+                _state.Properties = new StateProperties(
+                    StateProperties.EMouseState.Locked,
+                    StateProperties.ECrosshairState.Hidden,
+                    StateProperties.EEquippingState.Disabled,
+                    StateProperties.EInventoryState.Disabled,
+                    StateProperties.EHUDState.Hidden,
+                    StateProperties.ECompassState.Hidden,
+                    StateProperties.EMovementState.Locked,
+                    StateProperties.ELookState.Locked,
+                    StateProperties.EBlurState.Disabled,
+                    PlayerCamera.ECameraMode.Vehicle);
+            }
+            _state.PushToDefaultParent();
+            _exitListener = OnExit;
+            GameInput.RegisterExitListener(_exitListener, 10);
+        }
+
+        private static void PopState()
+        {
+            if (_exitListener != null)
+                GameInput.DeregisterExitListener(_exitListener);
+            if (_state != null)
+                _state.RemoveFromDefaultParent();
+        }
+
+        private static void OnExit(ExitAction action)
+        {
+            if (!action.Used && Playing)
+            {
+                action.Used = true;
+                _skip = true;
+            }
+        }
+
+        private static Vector3 Flat(Vector3 direction)
+        {
+            direction.y = 0f;
+            return direction.normalized;
+        }
+    }
+
+    [HarmonyPatch(typeof(LandVehicle), "ShouldBePhysicallySimulated")]
+    public static class CutsceneCarPatch
+    {
+        private static bool Prefix(LandVehicle __instance, ref bool __result)
+        {
+            if (!ShopCutscene.Controls(__instance))
+                return true;
+            __result = false;
+            return false;
+        }
+    }
+}

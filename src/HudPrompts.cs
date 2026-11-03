@@ -55,7 +55,7 @@ namespace SokudoTuners
                 return;
 
             LandVehicle vehicle = LocalDriver.GetVehicle();
-            bool driving = vehicle != null && !TuningMenu.IsOpen;
+            bool driving = vehicle != null && !TuningMenu.IsOpen && !ShopCutscene.Playing;
             bool showNitro = driving && Upgrades.HasNitro(vehicle);
             bool showTune = driving && AutoShop.IsInBay(vehicle);
 
