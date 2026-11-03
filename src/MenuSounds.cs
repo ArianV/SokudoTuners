@@ -3,6 +3,7 @@ using MelonLoader;
 using ScheduleOne.Audio;
 using ScheduleOne.Core.Audio;
 using ScheduleOne.DevUtilities;
+using ScheduleOne.UI;
 using ScheduleOne.UI.Polling;
 using UnityEngine;
 
@@ -44,19 +45,12 @@ namespace SokudoTuners
                     break;
             }
 
+            // Not every one of these is loaded in every game, so I take the first short one I find.
             AudioClip success = null;
             foreach (PollPanel poll in Resources.FindObjectsOfTypeAll<PollPanel>())
-            {
-                if (poll.SubmissionSuccessSound != null)
-                {
-                    AudioSource source = poll.SubmissionSuccessSound.GetComponent<AudioSource>();
-                    if (source != null && source.clip != null)
-                    {
-                        success = source.clip;
-                        break;
-                    }
-                }
-            }
+                success = success ?? ShortClip(poll.SubmissionSuccessSound);
+            foreach (RankUpCanvas rankUp in Resources.FindObjectsOfTypeAll<RankUpCanvas>())
+                success = success ?? ShortClip(rankUp.SoundEffect) ?? ShortClip(rankUp.BlipSound);
 
             AudioManager audio = Singleton<AudioManager>.Instance;
             _move = Create(audio, hover, 0.6f);
@@ -82,6 +76,14 @@ namespace SokudoTuners
                 return;
             controller.PitchMultiplier = pitch;
             controller.PlayOneShot();
+        }
+
+        private static AudioClip ShortClip(AudioSourceController controller)
+        {
+            if (controller == null)
+                return null;
+            AudioSource source = controller.GetComponent<AudioSource>();
+            return source != null && source.clip != null && source.clip.length <= 2.5f ? source.clip : null;
         }
 
         private static string Name(AudioClip clip) => clip != null ? clip.name : "none found";
