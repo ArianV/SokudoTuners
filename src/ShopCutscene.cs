@@ -27,6 +27,7 @@ namespace SokudoTuners
 
         private static LandVehicle _controlled;
         private static bool _wasInBay;
+        private static bool _armed;
         private static float _cooldownUntil;
         private static bool _skip;
         private static bool _subscribed;
@@ -48,18 +49,29 @@ namespace SokudoTuners
                 _subscribed = true;
             }
 
+            // Entering the bay arms it, and it fires once I'm heading in. Checking only the frame I crossed the line
+            // missed anyone who came in a bit quick.
             LandVehicle vehicle = LocalDriver.GetVehicle();
             bool inBay = AutoShop.IsInBay(vehicle);
-            if (!Playing && !TuningMenu.IsOpen && inBay && !_wasInBay && Time.unscaledTime > _cooldownUntil && DrivingIn(vehicle))
-                MelonCoroutines.Start(DriveIn(vehicle));
+            if (inBay && !_wasInBay)
+                _armed = true;
+            if (!inBay)
+                _armed = false;
             _wasInBay = inBay;
+
+            if (_armed && !Playing && !TuningMenu.IsOpen && Time.unscaledTime > _cooldownUntil && DrivingIn(vehicle))
+            {
+                _armed = false;
+                MelonCoroutines.Start(DriveIn(vehicle));
+            }
 
             Keyboard keyboard = Keyboard.current;
             if (Playing && keyboard != null && (keyboard.spaceKey.wasPressedThisFrame || keyboard.enterKey.wasPressedThisFrame))
                 _skip = true;
         }
 
-        // Slow and heading into the shop, so reversing out or blasting through doesn't set it off.
+        // Heading into the shop, so reversing out doesn't set it off. The cutscene puts the car where it wants it anyway,
+        // so speed only matters for not flying straight through the back wall first.
         private static bool DrivingIn(LandVehicle vehicle)
         {
             Transform spot = AutoShop.CarSpot;
@@ -67,7 +79,7 @@ namespace SokudoTuners
                 return false;
             Vector3 velocity = vehicle.Rb.velocity;
             float speed = ModSettings.DisplaySpeed(velocity.magnitude);
-            return speed < (ModSettings.UseMph ? 15f : 24f) && Vector3.Dot(velocity, -Flat(spot.forward)) > 0.3f;
+            return speed < (ModSettings.UseMph ? 60f : 100f) && Vector3.Dot(velocity, -Flat(spot.forward)) > 0.3f;
         }
 
         private static IEnumerator DriveIn(LandVehicle car)
@@ -82,11 +94,25 @@ namespace SokudoTuners
             Vector3 outward = Flat(spot.forward);
             Vector3 start = end.Item1 + outward * RollDistance;
 
-            Singleton<BlackOverlay>.Instance.Open(0.25f);
-            yield return new WaitForSeconds(0.3f);
-
+            // Physics off straight away, and the car coasts to a stop on its own momentum while the screen fades, so
+            // coming in quick doesn't end with a crash into the back wall before it goes black.
+            Vector3 carry = car.Rb.velocity;
             _controlled = car;
-            yield return new WaitForFixedUpdate();
+            Singleton<BlackOverlay>.Instance.Open(0.25f);
+            for (float t = 0f; t < 0.3f && car != null; t += Time.deltaTime)
+            {
+                car.transform.position += carry * Time.deltaTime;
+                carry *= Mathf.Exp(-6f * Time.deltaTime);
+                yield return null;
+            }
+            if (car == null)
+            {
+                _controlled = null;
+                PopState();
+                Playing = false;
+                yield break;
+            }
+
             car.transform.SetPositionAndRotation(start, end.Item2);
             StartShot(car, end.Item1, outward);
             Singleton<BlackOverlay>.Instance.Close(0.4f);
