@@ -170,7 +170,7 @@ namespace SokudoTuners
                 Open(vehicle, false);
         }
 
-        public static event Action Closed;
+        public static event Action<LandVehicle, bool> Closed;
 
         private static void Open(LandVehicle vehicle, bool onFoot)
         {
@@ -223,13 +223,14 @@ namespace SokudoTuners
                 return;
 
             IsOpen = false;
+            LandVehicle closedCar = _vehicle;
             _vehicle = null;
             GarageCamera.End();
             if (_canvas != null)
                 _canvas.enabled = false;
             if (_exitListener != null)
                 GameInput.DeregisterExitListener(_exitListener);
-            Closed?.Invoke();
+            Closed?.Invoke(closedCar, _onFoot);
         }
 
         private static StateProperties MenuProperties(PlayerCamera.ECameraMode cameraMode)

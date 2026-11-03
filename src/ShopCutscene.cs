@@ -22,6 +22,8 @@ namespace SokudoTuners
     {
         private const float RollDistance = 6f;
         private const float RollSeconds = 3.2f;
+        private const float OutDistance = 8f;
+        private const float OutSeconds = 3.2f;
 
         public static bool Playing { get; private set; }
 
@@ -134,25 +136,78 @@ namespace SokudoTuners
             Playing = false;
         }
 
-        // The car stays parked under my control while the garage is open, then gets its physics back.
-        private static void OnMenuClosed()
+        // Closing the garage while sat in the car at the shop drives it out. On foot (Marco) it just stays parked.
+        private static void OnMenuClosed(LandVehicle car, bool onFoot)
         {
-            if (_controlled == null)
-                return;
-            LandVehicle car = _controlled;
-            _controlled = null;
             _cooldownUntil = Time.unscaledTime + 3f;
-            MelonCoroutines.Start(Settle(car));
+            if (car != null && !onFoot && (Controls(car) || AutoShop.IsInBay(car)) && AutoShop.CarSpot != null)
+                MelonCoroutines.Start(DriveOut(car));
+            else
+                _controlled = null;
         }
 
-        private static IEnumerator Settle(LandVehicle car)
+        // Fade, car nose-out in the bay, then it pulls out through the door past a camera outside, picking up speed.
+        // I let go while it's still rolling, and the game hands the physics back with the speed it was doing.
+        private static IEnumerator DriveOut(LandVehicle car)
         {
-            yield return new WaitForFixedUpdate();
-            yield return new WaitForFixedUpdate();
+            Playing = true;
+            _skip = false;
+            PushState();
+            _controlled = car;
+
+            Singleton<BlackOverlay>.Instance.Open(0.25f);
+            yield return new WaitForSeconds(0.3f);
             if (car == null)
+            {
+                Finish();
                 yield break;
-            car.Rb.velocity = Vector3.zero;
-            car.Rb.angularVelocity = Vector3.zero;
+            }
+
+            Transform spot = AutoShop.CarSpot;
+            Tuple<Vector3, Quaternion> park = car.GetAlignmentTransform(spot, EParkingAlignment.RearToKerb);
+            Vector3 outward = Flat(spot.forward);
+            Vector3 start = park.Item1;
+            Vector3 end = start + outward * OutDistance;
+
+            car.transform.SetPositionAndRotation(start, park.Item2);
+            StartOutsideShot(car, start, outward);
+            Singleton<BlackOverlay>.Instance.Close(0.4f);
+
+            // Distance grows with time squared, so it pulls away from a standstill and is moving at 2D/T when I let go.
+            for (float t = 0f; t < OutSeconds && !_skip && car != null; t += Time.deltaTime)
+            {
+                float k = t / OutSeconds;
+                car.transform.position = Vector3.Lerp(start, end, k * k);
+                yield return null;
+            }
+
+            if (car != null && _skip)
+                car.transform.position = end;
+            Finish();
+        }
+
+        private static void Finish()
+        {
+            _controlled = null;
+            _shotActive = false;
+            PopState();
+            Playing = false;
+        }
+
+        private static void StartOutsideShot(LandVehicle car, Vector3 start, Vector3 outward)
+        {
+            Vector3 right = Vector3.Cross(Vector3.up, outward);
+            Vector3 outside = start + outward * (OutDistance + 1.5f) + Vector3.up * 1.2f;
+            float side = Room(car, outside, right) >= Room(car, outside, -right) ? 1f : -1f;
+            _shotPosition = GarageCamera.KeepOutOfWalls(car, outside, outside + right * side * 3.5f);
+            _shotActive = true;
+
+            if (PlayerSingleton<PlayerCamera>.InstanceExists)
+            {
+                Transform camera = PlayerSingleton<PlayerCamera>.Instance.transform;
+                camera.position = _shotPosition;
+                camera.rotation = Quaternion.LookRotation(car.transform.position + Vector3.up * 0.6f - _shotPosition);
+            }
         }
 
         // A low camera off to whichever side of the bay has more room, watching the car pull in.
