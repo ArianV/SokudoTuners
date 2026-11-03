@@ -78,18 +78,43 @@ namespace SokudoTuners
             Count("sign");
             Texture2D texture = ModAssets.LoadTexture("sign.png");
 
-            // A copy of the sign's own material keeps its shape and settings, I just swap the picture and make it glow.
+            // A copy of the sign's own material keeps its see-through settings, I just swap the picture and make it glow.
             Material material = new Material(sign.sharedMaterial);
             SetTexture(material, texture);
             SetColour(material, Color.white);
             EnableGlow(material, Color.white * 1.6f, texture);
-            sign.sharedMaterial = material;
 
-            // Pink wash on the wall around it. Outward is away from the middle of the building.
-            Vector3 centre = sign.bounds.center;
-            Vector3 outward = centre - BuildingCentre(root);
-            outward.y = 0f;
-            AddLight(made, "Sign Glow", centre + outward.normalized * 1.2f, Pink, 4f, 6f);
+            // The original panel sits recessed in the frame, which hides the top and bottom of my sign. It's part of a
+            // combined mesh so it can't be moved, so I hide it and hang my own panel the same size out in front.
+            Bounds bounds = sign.bounds;
+            Vector3 outward = Outward(sign.transform, bounds.center - BuildingCentre(root));
+            float width = new Vector2(bounds.size.x, bounds.size.z).magnitude;
+            sign.enabled = false;
+
+            GameObject panel = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            UnityEngine.Object.Destroy(panel.GetComponent<Collider>());
+            panel.name = "Sokudo Sign";
+            // A quad shows its face to whoever looks along its forward axis, so it looks back into the building.
+            panel.transform.SetPositionAndRotation(bounds.center + outward * 0.35f + Vector3.down * 0.15f, Quaternion.LookRotation(-outward));
+            panel.transform.localScale = new Vector3(width * 1.05f, bounds.size.y * 1.05f, 1f);
+            panel.transform.SetParent(made, true);
+            Renderer renderer = panel.GetComponent<Renderer>();
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+
+            AddLight(made, "Sign Glow", bounds.center + outward * 1.2f, Pink, 4f, 6f);
+        }
+
+        // Flat direction the sign faces. The panel's own normal is the most accurate, flipped if it points into the building.
+        private static Vector3 Outward(Transform sign, Vector3 roughlyOut)
+        {
+            roughlyOut.y = 0f;
+            Vector3 normal = sign.forward;
+            normal.y = 0f;
+            if (normal.sqrMagnitude < 0.01f)
+                return roughlyOut.normalized;
+            normal.Normalize();
+            return Vector3.Dot(normal, roughlyOut) < 0f ? -normal : normal;
         }
 
         // The shop's own lights may be baked into the lighting, where changing their colour does nothing, so each lamp
