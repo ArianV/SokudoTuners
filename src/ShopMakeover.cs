@@ -115,7 +115,44 @@ namespace SokudoTuners
             EnableGlow(boxMaterial, Color.black, null);
             box.GetComponent<Renderer>().sharedMaterial = boxMaterial;
 
+            // Framed in the building's own trim, like its door and roof edge.
+            Material trim = FindTrimMaterial(root);
+            float frameWidth = width * 0.78f;
+            float frameHeight = bounds.size.y * 0.78f;
+            const float bar = 0.12f;
+            Vector3 front = box.transform.position + outward * 0.03f;
+            Vector3 right = panel.transform.right;
+            AddFrameBar(made, front + Vector3.up * (frameHeight + bar) / 2f, panel.transform.rotation, new Vector3(frameWidth + bar * 2f, bar, 0.42f), trim);
+            AddFrameBar(made, front - Vector3.up * (frameHeight + bar) / 2f, panel.transform.rotation, new Vector3(frameWidth + bar * 2f, bar, 0.42f), trim);
+            AddFrameBar(made, front + right * (frameWidth + bar) / 2f, panel.transform.rotation, new Vector3(bar, frameHeight, 0.42f), trim);
+            AddFrameBar(made, front - right * (frameWidth + bar) / 2f, panel.transform.rotation, new Vector3(bar, frameHeight, 0.42f), trim);
+
             AddLight(made, "Sign Glow", bounds.center + outward * 1.2f, Pink, 4f, 6f);
+        }
+
+        private static Material FindTrimMaterial(Transform root)
+        {
+            Material trim = root.GetComponentsInChildren<Renderer>(true)
+                .SelectMany(r => r.sharedMaterials)
+                .FirstOrDefault(m => m != null && m.name.Contains("trim"));
+            if (trim != null)
+                return trim;
+
+            Material fallback = new Material(NeonMaterial(Pink));
+            SetColour(fallback, new Color(0.55f, 0.32f, 0.33f));
+            EnableGlow(fallback, Color.black, null);
+            return fallback;
+        }
+
+        private static void AddFrameBar(Transform parent, Vector3 position, Quaternion rotation, Vector3 size, Material material)
+        {
+            GameObject bar = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            UnityEngine.Object.Destroy(bar.GetComponent<Collider>());
+            bar.name = "Sokudo Sign Frame";
+            bar.transform.SetPositionAndRotation(position, rotation);
+            bar.transform.localScale = size;
+            bar.transform.SetParent(parent, true);
+            bar.GetComponent<Renderer>().sharedMaterial = material;
         }
 
         // Flat direction the sign faces. The panel's own normal is the most accurate, flipped if it points into the building.
