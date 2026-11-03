@@ -22,8 +22,10 @@ namespace SokudoTuners
     {
         private const float RollDistance = 6f;
         private const float RollSeconds = 3.2f;
-        private const float OutDistance = 8f;
+        private const float OutDistance = 10f;
         private const float OutSeconds = 3.2f;
+        private const float StraightBeforeTurning = 5f;
+        private const float ExitCheckDistance = 12f;
 
         public static bool Playing { get; private set; }
 
@@ -167,7 +169,7 @@ namespace SokudoTuners
             Tuple<Vector3, Quaternion> park = car.GetAlignmentTransform(spot, EParkingAlignment.RearToKerb);
             Vector3 outward = Flat(spot.forward);
             Vector3 start = park.Item1;
-            Vector3 end = start + outward * OutDistance;
+            float turn = ClearTurn(car, start, outward);
 
             car.transform.SetPositionAndRotation(start, park.Item2);
             StartOutsideShot(car, start, outward);
@@ -177,13 +179,63 @@ namespace SokudoTuners
             for (float t = 0f; t < OutSeconds && !_skip && car != null; t += Time.deltaTime)
             {
                 float k = t / OutSeconds;
-                car.transform.position = Vector3.Lerp(start, end, k * k);
+                PlaceOnExitPath(car, start, outward, turn, OutDistance * k * k);
                 yield return null;
             }
 
             if (car != null && _skip)
-                car.transform.position = end;
+                PlaceOnExitPath(car, start, outward, turn, OutDistance);
             Finish();
+        }
+
+        // Straight out until the car is through the door, then an even curve onto the clear heading. Walked in small
+        // steps rather than solved, it's only a few metres.
+        private static void PlaceOnExitPath(LandVehicle car, Vector3 start, Vector3 outward, float turn, float distance)
+        {
+            const int steps = 40;
+            float step = distance / steps;
+            Vector3 position = start;
+            Vector3 heading = outward;
+            for (int i = 0; i < steps; i++)
+            {
+                float travelled = step * i;
+                float bend = Mathf.Clamp01((travelled - StraightBeforeTurning) / (OutDistance - StraightBeforeTurning));
+                heading = Quaternion.AngleAxis(turn * bend, Vector3.up) * outward;
+                position += heading * step;
+            }
+            car.transform.SetPositionAndRotation(position, Quaternion.LookRotation(heading, Vector3.up));
+        }
+
+        // Things like the payphone outside the door are baked into the scenery, so I can't move them out of the way.
+        // Instead I sweep a car-sized box out of the door and take the straightest heading that's clear.
+        private static float ClearTurn(LandVehicle car, Vector3 start, Vector3 outward)
+        {
+            Vector3 from = start + outward * StraightBeforeTurning + Vector3.up * 0.9f;
+            Vector3 halfSize = new Vector3(1.1f, 0.5f, 0.3f);
+            float bestAngle = 0f;
+            float bestRoom = -1f;
+
+            foreach (float angle in new[] { 0f, 12f, -12f, 22f, -22f, 32f, -32f })
+            {
+                Vector3 direction = Quaternion.AngleAxis(angle, Vector3.up) * outward;
+                float room = ExitCheckDistance;
+                foreach (RaycastHit hit in Physics.BoxCastAll(from, halfSize, direction, Quaternion.LookRotation(direction), ExitCheckDistance, ~0, QueryTriggerInteraction.Ignore))
+                {
+                    Transform other = hit.collider.transform;
+                    if (other.IsChildOf(car.transform) || (Player.Local != null && other.IsChildOf(Player.Local.transform)))
+                        continue;
+                    room = Mathf.Min(room, hit.distance);
+                }
+
+                if (room >= ExitCheckDistance)
+                    return angle;
+                if (room > bestRoom)
+                {
+                    bestRoom = room;
+                    bestAngle = angle;
+                }
+            }
+            return bestAngle;
         }
 
         private static void Finish()
