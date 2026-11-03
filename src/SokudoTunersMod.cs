@@ -26,6 +26,7 @@ namespace SokudoTuners
             NitroButton.Update();
             NitroFlames.Update();
             DebugTools.Update();
+            ShopInspector.Update();
         }
 
         public override void OnLateUpdate()

@@ -18,6 +18,8 @@ namespace SokudoTuners
                 "Log 0-60 / 60-0 times and per-car stats to the console.");
         }
 
+        public static bool DebugLoggingEnabled => _debugLogging.Value;
+
         public static void LogDebug(string message)
         {
             if (_debugLogging.Value)
