@@ -95,7 +95,7 @@ namespace SokudoTuners
             UnityEngine.Object.Destroy(panel.GetComponent<Collider>());
             panel.name = "Sokudo Sign";
             // A quad shows its face to whoever looks along its forward axis, so it looks back into the building.
-            panel.transform.SetPositionAndRotation(bounds.center + outward * 0.35f + Vector3.down * 0.15f, Quaternion.LookRotation(-outward));
+            panel.transform.SetPositionAndRotation(bounds.center + outward * 0.35f + Vector3.down * 0.35f, Quaternion.LookRotation(-outward));
             panel.transform.localScale = new Vector3(width * 1.05f, bounds.size.y * 1.05f, 1f);
             panel.transform.SetParent(made, true);
             Renderer renderer = panel.GetComponent<Renderer>();
